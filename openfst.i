@@ -104,6 +104,27 @@ struct StdVectorFst {
         }
         $self->SetFinal(state,fcost);
     }
+    void AddTranslation(const wchar_t *in,const wchar_t *out,float icost=0.0,float fcost=0.0,float ccost=0.0) {
+        int state = $self->Start();
+        if(state<0) {
+            state = $self->AddState();
+            $self->SetStart(state);
+        }
+        const int OEPS = 0;
+        const int IEPS = 0;
+        for(int i=0;in[i];i++) {
+            int nstate = $self->AddState();
+            float xcost = ccost + (i==0?icost:0);
+            $self->AddArc(state,StdArc(in[i],OEPS,xcost,nstate));
+            state = nstate;
+        }
+        for(int i=0;out[i];i++) {
+            int nstate = $self->AddState();
+            $self->AddArc(state,StdArc(IEPS,out[i],ccost,nstate));
+            state = nstate;
+        }
+        $self->SetFinal(state,fcost);
+    }
     float FinalWeight(int state) {
         return $self->Final(state).Value();
     }
