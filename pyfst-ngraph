@@ -1,6 +1,5 @@
 #!/usr/bin/python2.5
 
-
 import sys,os
 from math import log
 import openfst
@@ -13,6 +12,7 @@ n = int(sys.argv[2])
 assert n>1 and n<30
 
 for file in sys.argv[3:]:
+    sys.stderr.write("[%s]\n"%file)
     for line in open(file).readlines():
         line = "^"*(n-1) + line
         for i in range(n,len(line)):
@@ -22,6 +22,7 @@ for file in sys.argv[3:]:
 ngrams = counts.keys()
 ngrams.sort()
 total = sum(counts.values())
+sys.stderr.write("[total %d-graphs = %d]\n"%(n,total))
 
 fst = openfst.StdVectorFst()
 
