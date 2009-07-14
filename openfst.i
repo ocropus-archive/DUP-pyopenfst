@@ -104,6 +104,27 @@ struct StdVectorFst {
         }
         $self->SetFinal(state,fcost);
     }
+    void AddTranslation(const wchar_t *in,const wchar_t *out,float icost=0.0,float fcost=0.0,float ccost=0.0) {
+        int state = $self->Start();
+        if(state<0) {
+            state = $self->AddState();
+            $self->SetStart(state);
+        }
+        const int OEPS = 0;
+        const int IEPS = 0;
+        for(int i=0;in[i];i++) {
+            int nstate = $self->AddState();
+            float xcost = ccost + (i==0?icost:0);
+            $self->AddArc(state,StdArc(in[i],OEPS,xcost,nstate));
+            state = nstate;
+        }
+        for(int i=0;out[i];i++) {
+            int nstate = $self->AddState();
+            $self->AddArc(state,StdArc(IEPS,out[i],ccost,nstate));
+            state = nstate;
+        }
+        $self->SetFinal(state,fcost);
+    }
     float FinalWeight(int state) {
         return $self->Final(state).Value();
     }
@@ -161,6 +182,32 @@ struct StdVectorFst {
         }
         result[index++] = 0;
         return strdup(result);
+    }
+    wchar_t *WGetString(StdVectorFst *fst,int which=0) {
+        wchar_t result[100000];
+        int index = 0;
+        int state = fst->Start();
+        if(state<0) return 0;
+        for(;;) {
+            if(fst->Final(state)!=Weight::Zero()) break;
+            ArcIterator<StdVectorFst> iter(*fst,state);
+            iter.Seek(which);
+            StdArc arc(iter.Value());
+            result[index++] = arc.olabel;
+            if(index>=-1+sizeof result/sizeof result[0])
+                throw "string too long";
+            int nstate = arc.nextstate;
+            if(nstate==state)
+                throw "malformed string fst (state==nstate)";
+            if(state<0)
+                throw "malformed string fst (no final, no successor)";
+            state = nstate;
+            which = 0;
+        }
+        result[index++] = 0;
+        wchar_t *p = (wchar_t *)malloc(index*sizeof *result);
+        memcpy(p,result,index*sizeof *result);
+        return p;
     }
     StdVectorFst *Read(const char *s) {
         return StdVectorFst::Read(s);
