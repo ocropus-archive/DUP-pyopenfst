@@ -5,20 +5,51 @@ import openfst
 
 Fst = openfst.StdVectorFst
 
+prefix = Fst()
+prefix.AddString("",0.0)
+prefix.AddString("'",2.0)
+prefix.AddString("\"",2.0)
+
 dict = Fst()
-for line in open("dict1000").readlines():
+for line in open("wordcosts").readlines():
     line = line[:-1]
-    dict.AddString(line)
+    cost,word = line.split()
+    cost = float(cost)
+    dict.AddString(word,cost)
+    if word!=word.upper():
+        dict.AddString(word.upper(),cost+1.0)
+    if word!=word.lower():
+        dict.AddString(word.lower(),cost+1.0)
+
+openfst.ConcatOnto(prefix,dict)
+dict = prefix
+
+suffix = Fst()
+suffix.AddString("",0.0)
+suffix.AddString("s",2.0)
+suffix.AddString("'s",2.0)
+suffix.AddString("ly",5.0)
+suffix.AddString("lly",7.0)
+suffix.AddString("ing",5.0)
+suffix.AddString("es",7.0)
+suffix.AddString("sses",7.0)
+openfst.ConcatOnto(dict,suffix)
 
 sep = Fst()
-sep.AddString(" ")
-sep.AddString(". ")
-sep.AddString(", ")
-sep.AddString(": ")
-sep.AddString("; ")
-sep.AddString("? ")
-sep.AddString("! ")
-openfst.ClosureStar(sep)
+sep.AddString(" ",0.0)
+sep.AddString(". ",2.0)
+sep.AddString(", ",2.0)
+sep.AddString(": ",4.0)
+sep.AddString("; ",4.0)
+sep.AddString("? ",4.0)
+sep.AddString("! ",4.0)
+sep.AddString("\"",4.0)
+sep.AddString("\" ",4.0)
+sep.AddString(" \"",4.0)
+sep.AddString("'",5.0)
+sep.AddString("' ",5.0)
+sep.AddString(" '",5.0)
+sep.AddString("",10.0)
 openfst.ConcatOnto(dict,sep)
 openfst.ClosurePlus(dict)
 

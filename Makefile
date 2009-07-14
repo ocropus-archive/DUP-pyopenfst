@@ -10,3 +10,4 @@ _openfst.so: openfst.i
 
 clean:
 	rm -f *.so *.cxx *.o openfst.py ocropus.py
+# DO NOT DELETE

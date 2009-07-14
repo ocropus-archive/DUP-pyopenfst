@@ -1,8 +1,15 @@
 #!/usr/bin/python2.5
 
 import sys,os
+from bisect import bisect
 import openfst
+from scipy import *
 import random
+
+def rsamp(a):
+    c = cumsum(a)
+    return bisect(c,random.uniform(0.0,1.0))
+
 
 fst = openfst.Read(sys.argv[1])
 
@@ -14,7 +21,10 @@ def gen1():
         if n==0: break
         if fst.IsFinal(state): 
             if random.uniform(0,1)<0.1: break
-        j = random.randint(0,n-1)
+        costs = array([fst.GetWeight(state,j) for j in range(n)])
+        probs = exp(-costs)
+        probs /= sum(probs)
+        j = rsamp(probs)
         result += chr(fst.GetOutput(state,j))
         state = fst.GetNext(state,j)
     return result
