@@ -1,0 +1,12 @@
+#!/bin/sh
+rm -f _input _temp.fst
+cat > _input <<EOF
+abababaaaaaba
+abbbabababaaab
+ababaaaababa
+abaaaabababbbbababab
+babbbbbababbbababbabaaa
+ababbabababbabababa
+EOF
+pyfst-ngraph _temp.fst 3 input
+fstdraw _temp.fst | dot -Tpng | display -rotate 90 -
