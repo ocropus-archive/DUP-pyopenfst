@@ -162,6 +162,32 @@ struct StdVectorFst {
         result[index++] = 0;
         return strdup(result);
     }
+    wchar_t *WGetString(StdVectorFst *fst,int which=0) {
+        wchar_t result[100000];
+        int index = 0;
+        int state = fst->Start();
+        if(state<0) return 0;
+        for(;;) {
+            if(fst->Final(state)!=Weight::Zero()) break;
+            ArcIterator<StdVectorFst> iter(*fst,state);
+            iter.Seek(which);
+            StdArc arc(iter.Value());
+            result[index++] = arc.olabel;
+            if(index>=-1+sizeof result/sizeof result[0])
+                throw "string too long";
+            int nstate = arc.nextstate;
+            if(nstate==state)
+                throw "malformed string fst (state==nstate)";
+            if(state<0)
+                throw "malformed string fst (no final, no successor)";
+            state = nstate;
+            which = 0;
+        }
+        result[index++] = 0;
+        wchar_t *p = (wchar_t *)malloc(index*sizeof *result);
+        memcpy(p,result,index*sizeof *result);
+        return p;
+    }
     StdVectorFst *Read(const char *s) {
         return StdVectorFst::Read(s);
     }
