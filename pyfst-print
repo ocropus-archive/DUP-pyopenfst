@@ -1,0 +1,10 @@
+#!/usr/bin/python2.5
+
+import sys,os
+import openfst
+
+fst = openfst.Read(sys.argv[1])
+for i in range(fst.NumStates()):
+    print "*",i,fst.FinalWeight(i)
+    for j in range(fst.NumArcs(i)):
+        print i,j,fst.GetInput(i,j),fst.GetOutput(i,j),fst.GetWeight(i,j),fst.GetNext(i,j)

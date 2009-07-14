@@ -1,0 +1,23 @@
+#!/usr/bin/python2.5
+
+import sys,os
+import openfst
+import random
+
+fst = openfst.Read(sys.argv[1])
+
+def gen1():
+    result = ""
+    state = fst.Start()
+    for index in range(64):
+        n = fst.NumArcs(state)
+        if n==0: break
+        if fst.IsFinal(state): 
+            if random.uniform(0,1)<0.1: break
+        j = random.randint(0,n-1)
+        result += chr(fst.GetOutput(state,j))
+        state = fst.GetNext(state,j)
+    return result
+
+for i in range(20):
+    print gen1()

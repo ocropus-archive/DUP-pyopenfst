@@ -1,0 +1,29 @@
+#!/usr/bin/python2.5
+
+import sys,os
+import openfst
+
+Fst = openfst.StdVectorFst
+
+dict = Fst()
+for line in open("dict1000").readlines():
+    line = line[:-1]
+    dict.AddString(line)
+
+sep = Fst()
+sep.AddString(" ")
+sep.AddString(". ")
+sep.AddString(", ")
+sep.AddString(": ")
+sep.AddString("; ")
+sep.AddString("? ")
+sep.AddString("! ")
+openfst.ClosureStar(sep)
+openfst.ConcatOnto(dict,sep)
+openfst.ClosurePlus(dict)
+
+det = Fst()
+openfst.Determinize(dict,det)
+openfst.Minimize(det)
+
+det.Write("dict.fst")
