@@ -11,6 +11,10 @@ using namespace fst;
 typedef TropicalWeight Weight;
 %}
 
+%inline %{
+const int epsilon = 0;
+%}
+
 %exception {
     try {
         $action
@@ -89,17 +93,15 @@ struct StdVectorFst {
             state = $self->AddState();
             $self->SetStart(state);
         }
-        const int OEPS = 0;
-        const int IEPS = 0;
         for(int i=0;in[i];i++) {
             int nstate = $self->AddState();
             float xcost = ccost + (i==0?icost:0);
-            $self->AddArc(state,StdArc(in[i],OEPS,xcost,nstate));
+            $self->AddArc(state,StdArc(in[i],epsilon,xcost,nstate));
             state = nstate;
         }
         for(int i=0;out[i];i++) {
             int nstate = $self->AddState();
-            $self->AddArc(state,StdArc(IEPS,out[i],ccost,nstate));
+            $self->AddArc(state,StdArc(epsilon,out[i],ccost,nstate));
             state = nstate;
         }
         $self->SetFinal(state,fcost);
@@ -218,7 +220,10 @@ struct StdVectorFst {
     void ArcSortInput(StdVectorFst *fst) {
         ArcSort(fst,StdILabelCompare());
     }
-    void Project(StdVectorFst *result) {
+    void ProjectInput(StdVectorFst *result) {
+        Project(result,PROJECT_INPUT);
+    }
+    void ProjectOutput(StdVectorFst *result) {
         Project(result,PROJECT_OUTPUT);
     }
     void ClosureStar(StdVectorFst *fst) {

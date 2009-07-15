@@ -1,0 +1,18 @@
+#!/usr/bin/python2.5
+
+import openfst
+
+fst = openfst.StdVectorFst()
+
+fst.AddTranslation("a","A")
+fst.AddTranslation("b","B")
+fst.AddTranslation("c","C")
+fst.AddTranslation("d","D")
+fst.AddTranslation("e","E")
+openfst.ClosureStar(fst)
+
+det = openfst.StdVectorFst()
+openfst.RmEpsilon(fst)
+openfst.Determinize(fst,det)
+openfst.Minimize(det)
+det.Write("toupper.fst")

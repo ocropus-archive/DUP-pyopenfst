@@ -29,16 +29,19 @@ class narray(unittest.TestCase):
         assert abs(fst.FinalWeight(s[3])-73.0)<1e-10
     def testTranslation(self):
         input = openfst.StdVectorFst()
-        input.AddString("hello")
-        input.AddString("foo")
+        input.AddString("aaba")
         fst = openfst.StdVectorFst()
-        fst.AddTranslation("hello","world")
-        fst.Write("trans.fst")
+        fst.AddTranslation("a","A")
+        fst.AddTranslation("b","B")
+        openfst.ClosureStar(fst)
         result = openfst.StdVectorFst()
         openfst.Compose(input,fst,result)
         shortest = openfst.StdVectorFst()
+        openfst.ProjectOutput(result)
+        openfst.RmEpsilon(result)
         openfst.ShortestPath(result,shortest,1)
-        print openfst.GetString(shortest)
+        shortest.Write("temp.fst")
+        assert "AABA"==openfst.GetString(shortest)
 
 
 suite = unittest.makeSuite(narray,'test')

@@ -4,7 +4,8 @@ import sys,os
 import openfst
 
 str = openfst.StdVectorFst()
-openfst.AddString(str,sys.argv[1])
+str.AddString(sys.argv[1])
+str.Write("str.fst")
 
 fst = openfst.Read(sys.argv[2])
 
@@ -13,6 +14,7 @@ openfst.ArcSortInput(fst)
 
 result = openfst.StdVectorFst()
 openfst.Compose(fst,str,result)
+openfst.ProjectOutput(result)
 
 best = openfst.StdVectorFst()
 openfst.ShortestPath(result,best,1)

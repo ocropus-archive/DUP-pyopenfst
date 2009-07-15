@@ -20,12 +20,13 @@ def gen1():
         n = fst.NumArcs(state)
         if n==0: break
         if fst.IsFinal(state): 
-            if random.uniform(0,1)<0.1: break
+            if len(result)>5 and random.uniform(0,1)<0.1: break
         costs = array([fst.GetWeight(state,j) for j in range(n)])
         probs = exp(-costs)
         probs /= sum(probs)
         j = rsamp(probs)
-        result += chr(fst.GetOutput(state,j))
+        olabel = fst.GetOutput(state,j)
+        result += chr(olabel)
         state = fst.GetNext(state,j)
     return result
 
