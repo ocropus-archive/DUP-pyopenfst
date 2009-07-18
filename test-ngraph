@@ -8,5 +8,5 @@ abaaaabababbbbababab
 babbbbbababbbababbabaaa
 ababbabababbabababa
 EOF
-pyfst-ngraph _temp.fst 3 input
+pyfst-ngraph _temp.fst 3 _input
 fstdraw _temp.fst | dot -Tpng | display -rotate 90 -
