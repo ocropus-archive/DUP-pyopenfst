@@ -19,8 +19,7 @@ def gen1():
     for index in range(64):
         n = fst.NumArcs(state)
         if n==0: break
-        if fst.IsFinal(state): 
-            if len(result)>5 and random.uniform(0,1)<0.1: break
+        if len(result)>0 and fst.IsFinal(state) and random.uniform(0,1)<0.5: break
         costs = array([fst.GetWeight(state,j) for j in range(n)])
         probs = exp(-costs)
         probs /= sum(probs)

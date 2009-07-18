@@ -13,16 +13,6 @@ cap_cost = 1.0  # cost of capitalizing a dictionary word
 
 Fst = openfst.StdVectorFst
 
-### start with some prefixes... things that
-### can come at the start of a word
-
-prefix = Fst()
-prefix.AddString("",0.0)
-prefix.AddString("'",9.0)
-prefix.AddString("\"",9.0)
-
-### add the word from the dictionary
-
 dict = Fst()
 stream = open("dict-costs")
 lines = list(stream.readlines())
@@ -53,54 +43,22 @@ while lines!=[]:
 
 assert total==0 # sanity check for the bug above
 
-openfst.ConcatOnto(prefix,dict)
-dict = prefix
-
 ### now add common linguistic suffixes
 ### the weights are guesses for now
 
 suffix = Fst()
 suffix.AddString("",0.0)
-suffix.AddString("s",5.0)
-suffix.AddString("'s",5.0)
-suffix.AddString("ly",9.0)
+suffix.AddString("s",7.0)
+suffix.AddString("'s",7.0)
+suffix.AddString("ly",9,0)
 suffix.AddString("ing",9.0)
 suffix.AddString("es",9.0)
 suffix.AddString("'nt",9.0)
 suffix.AddString("'ve",9.0)
 openfst.ConcatOnto(dict,suffix)
 
-### finally, add word separators
-
-sep = Fst()
-sep.AddString(" ",0.0)
-sep.AddString(". ",4.0)
-sep.AddString("-",4.0)
-sep.AddString(" - ",4.0)
-sep.AddString("- ",4.0)
-sep.AddString(" -",4.0)
-sep.AddString("...",9.0)
-sep.AddString(", ",4.0)
-sep.AddString(": ",9.0)
-sep.AddString("; ",9.0)
-sep.AddString("? ",9.0)
-sep.AddString("! ",9.0)
-sep.AddString("\" ",9.0)
-sep.AddString(" \"",9.0)
-sep.AddString("' ",9.0)
-sep.AddString(" '",9.0)
-sep.AddString("\"",11.0)
-sep.AddString("'",11.0)
-sep.AddString("",14.0)
-openfst.ConcatOnto(dict,sep)
-openfst.ClosurePlus(dict)
-
-### FIXME need to do something better for the final state
-
-### finally determinize and minimize
-
 det = Fst()
 openfst.Determinize(dict,det)
 openfst.Minimize(det)
 
-det.Write("dict.fst")
+det.Write("words.fst")
