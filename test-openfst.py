@@ -2,13 +2,18 @@ import unittest
 import openfst
 
 class narray(unittest.TestCase):
-    def testRead(self):
-        fst = openfst.Read("ocr-dict-case.fst")
-        openfst.Verify(fst)
     def testAddString(self):
         fst = openfst.StdVectorFst()
         fst.AddString("hello")
         fst.AddString("world")
+    def testRead(self):
+        fst = openfst.StdVectorFst()
+        fst.AddString("hello")
+        fst.AddString("world")
+        fst.Write("_test.fst")
+        fst2 = openfst.Read("_test.fst")
+        openfst.Verify(fst2)
+        # might check for equivalence here
     def testAddGetString(self):
         fst = openfst.StdVectorFst()
         fst.AddString("hello")
