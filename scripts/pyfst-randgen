@@ -12,14 +12,16 @@ def rsamp(a):
 
 
 fst = openfst.Read(sys.argv[1])
+openfst.Verify(fst)
 
 def gen1():
     result = ""
     state = fst.Start()
     for index in range(64):
+        assert state>=0
         n = fst.NumArcs(state)
         if n==0: break
-        if len(result)>0 and fst.IsFinal(state) and random.uniform(0,1)<0.5: break
+        if len(result)>20 and fst.IsFinal(state) and random.uniform(0,1)<0.1: break
         costs = array([fst.GetWeight(state,j) for j in range(n)])
         probs = exp(-costs)
         probs /= sum(probs)

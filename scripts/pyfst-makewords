@@ -46,6 +46,9 @@ assert total==0 # sanity check for the bug above
 ### now add common linguistic suffixes
 ### the weights are guesses for now
 
+### FIXME these are added in lower case only
+### FIXME really should use morphology...
+
 suffix = Fst()
 suffix.AddString("",0.0)
 suffix.AddString("s",7.0)

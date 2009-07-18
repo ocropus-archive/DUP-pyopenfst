@@ -4,7 +4,12 @@ import sys,os
 from math import log
 import openfst
 
+chars = {}
 counts = {}
+
+if len(sys.argv)<2:
+    sys.stderr.write("usage: %s outfile n files...\n"%sys.argv[0])
+    sys.exit(0)
 
 outfile = sys.argv[1]
 assert not os.path.exists(outfile)
@@ -17,12 +22,16 @@ for file in sys.argv[3:]:
         line = "^"*(n-1) + line
         for i in range(n,len(line)):
             ngram = line[i-n:i]
+            chars[ngram[-1]] = 1
             counts[ngram] = 1 + counts.get(ngram,0)
 
 ngrams = counts.keys()
 ngrams.sort()
 total = sum(counts.values())
-sys.stderr.write("[total %d-graphs = %d]\n"%(n,total))
+print "n",n
+print "total",total
+print "distinct",len(ngrams)
+print "coverage",len(ngrams)*1.0/len(chars.keys())**n
 
 fst = openfst.StdVectorFst()
 
