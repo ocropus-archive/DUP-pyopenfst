@@ -1,0 +1,41 @@
+#!/usr/bin/python
+
+import sys,os,re
+import openfst
+
+assert not os.path.exists(sys.argv[2])
+
+Fst = openfst.StdVectorFst
+
+def add_line(fst,s):
+    s = re.sub('\s+',' ',s)
+    state = fst.Start()
+    if state<0:
+        state = fst.AddState()
+        fst.SetStart(state)
+    for i in range(len(s)):
+        c = ord(s[i])
+        if c>=32 and c<128:
+            pass
+        else:
+            print "skipping %d"%c
+            continue
+        nstate = fst.AddState()
+        if s[i]==" ":
+            fst.AddArc(state,c,c,0.0,nstate)
+            fst.AddArc(state,openfst.epsilon,openfst.epsilon,1.0,nstate)
+            fst.AddArc(nstate,c,c,0.0,nstate)
+        else:
+            fst.AddArc(state,c,c,0.0,nstate)
+        state = nstate
+    fst.SetFinal(state,0.0001)
+
+fst = Fst()
+for line in open(sys.argv[1]).readlines():
+    line = line[:-1]
+    add_line(fst,line)
+
+det = Fst()
+openfst.Determinize(fst,det)
+openfst.Minimize(det)
+det.Write(sys.argv[2])
