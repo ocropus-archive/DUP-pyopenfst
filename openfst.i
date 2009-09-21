@@ -68,11 +68,15 @@ struct StdVectorFst {
         for(int i=0;s[i];i++) {
             int nstate = $self->AddState();
             float xcost = ccost + (i==0?icost:0);
-            $self->AddArc(state,StdArc(s[i],s[i],xcost,nstate));
+            int c = s[i];
+            if(c<0 || c>10000000)
+                throw "AddString: bad character";
+            $self->AddArc(state,StdArc(c,c,xcost,nstate));
             state = nstate;
         }
         $self->SetFinal(state,fcost);
     }
+#if 0
     void AddString(const wchar_t *s,float icost=0.0,float fcost=0.0,float ccost=0.0) {
         int state = $self->Start();
         if(state<0) {
@@ -127,6 +131,7 @@ struct StdVectorFst {
         }
         $self->SetFinal(state,fcost);
     }
+#endif
     float FinalWeight(int state) {
         return $self->Final(state).Value();
     }

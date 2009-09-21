@@ -27,6 +27,9 @@ def gen1():
         probs /= sum(probs)
         j = rsamp(probs)
         olabel = fst.GetOutput(state,j)
+        if olabel<0 or olabel>255:
+            print "??? olabel=",olabel
+            olabel = ord("~")
         result += chr(olabel)
         state = fst.GetNext(state,j)
     return result
