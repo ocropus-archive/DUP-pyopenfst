@@ -76,8 +76,7 @@ struct StdVectorFst {
         }
         $self->SetFinal(state,fcost);
     }
-#if 0
-    void AddString(const wchar_t *s,float icost=0.0,float fcost=0.0,float ccost=0.0) {
+    void AddWString(const wchar_t *s,float icost=0.0,float fcost=0.0,float ccost=0.0) {
         int state = $self->Start();
         if(state<0) {
             state = $self->AddState();
@@ -110,7 +109,7 @@ struct StdVectorFst {
         }
         $self->SetFinal(state,fcost);
     }
-    void AddTranslation(const wchar_t *in,const wchar_t *out,float icost=0.0,float fcost=0.0,float ccost=0.0) {
+    void AddWTranslation(const wchar_t *in,const wchar_t *out,float icost=0.0,float fcost=0.0,float ccost=0.0) {
         int state = $self->Start();
         if(state<0) {
             state = $self->AddState();
@@ -131,7 +130,6 @@ struct StdVectorFst {
         }
         $self->SetFinal(state,fcost);
     }
-#endif
     float FinalWeight(int state) {
         return $self->Final(state).Value();
     }
@@ -274,3 +272,12 @@ void TopSort(StdVectorFst *fst);
 void Union(StdVectorFst *out,StdVectorFst &fst);
 void Verify(StdVectorFst &fst);
 
+%newobject Copy;
+%inline %{
+    StdVectorFst *Copy(StdVectorFst &fst) {
+        // is there a method that does this directly?
+        StdVectorFst *result = new StdVectorFst();
+        Union(result,fst);
+        return result;
+    }
+%}
