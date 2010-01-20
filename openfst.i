@@ -1,11 +1,13 @@
-// -*- C++ -*-
+// -*- mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
 %module openfst
 %include "typemaps.i"
 %include "cstring.i"
+%include "std_string.i"
 %include "std_wstring.i"
 %{
 #include <fst/fstlib.h>
+#include <fst/symbol-table.h>
 #include <fst/arcsort.h>
 using namespace fst;
 typedef TropicalWeight Weight;
@@ -24,7 +26,7 @@ const int epsilon = 0;
         return NULL;
     }
     catch(...) {
-        PyErr_SetString(PyExc_IndexError,"unknown exception in iulib");
+        PyErr_SetString(PyExc_IndexError,"unknown exception in openfst");
         return NULL;
     }
 }
@@ -41,6 +43,34 @@ struct StdArc {
     StdArc(int,int,float,int);
 };
 
+struct SymbolTable {
+    SymbolTable(std::string const &);
+    long long AddSymbol(std::string const &, long long);
+    long long AddSymbol(std::string const &);
+    void AddTable(SymbolTable const &);
+    std::string const & Name() const;
+    std::string CheckSum() const;
+    SymbolTable *Copy() const;
+    static SymbolTable* ReadText(std::string const & filename,
+                                 bool allow_negative = false);
+    bool WriteText(std::string const & filename) const;
+    static SymbolTable *Read(std::string const & filename);
+    bool Write(std::string const & filename) const;
+    std::string Find(long long) const;
+    long long Find(std::string const &);
+    long long AvailableKey(void) const;
+    unsigned long NumSymbols(void) const;
+};
+
+struct SymbolTableIterator {
+    SymbolTableIterator(SymbolTable const &);
+    bool Done(void);
+    const char * Symbol(void);
+    long long Value(void);
+    void Next(void);
+    void Reset(void);
+};
+
 struct StdVectorFst {
     int AddState();
     int Start();
@@ -53,6 +83,13 @@ struct StdVectorFst {
     void Write(const char *);
     void ReserveStates(int);
     void ReserveArcs(int,int);
+    SymbolTable * InputSymbols();
+    SymbolTable * OutputSymbols();
+    void SetInputSymbols(SymbolTable const *);
+    void SetOutputSymbols(SymbolTable const *);
+
+    static StdVectorFst* Read(std::string const & filename);
+    bool Write(std::string const &filename);
 };
 
 %extend StdVectorFst {
