@@ -80,7 +80,6 @@ struct StdVectorFst {
     void SetStart(int);
     void AddArc(int,const StdArc &);
     void SetFinal(int,float);
-    void Write(const char *);
     void ReserveStates(int);
     void ReserveArcs(int,int);
     SymbolTable * InputSymbols();
@@ -90,7 +89,34 @@ struct StdVectorFst {
 
     static StdVectorFst* Read(std::string const & filename);
     bool Write(std::string const &filename);
+    StdVectorFst* Copy(bool reset = false) const;
 };
+
+%pythoncode %{
+class SymbolTable_iter(object):
+    def __init__(self, itor):
+        self.first = True
+        self.itor = itor
+
+    def __iter__(self):
+        return self.__class__(self.itor)
+
+    def next(self):
+        if self.first:
+            self.first = False
+        else:
+            self.itor.Next()
+        if self.itor.Done():
+            raise StopIteration
+        return self.itor
+%}
+
+%extend SymbolTable {
+    %pythoncode %{
+def __iter__(self):
+    return SymbolTable_iter(SymbolTableIterator(self))
+%}
+}
 
 %extend StdVectorFst {
     bool IsFinal(int state) {
