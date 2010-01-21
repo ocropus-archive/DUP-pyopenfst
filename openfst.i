@@ -11,6 +11,9 @@
 #include <fst/arcsort.h>
 using namespace fst;
 typedef TropicalWeight Weight;
+typedef ArcIterator<StdVectorFst> StdVectorArcIterator;
+typedef MutableArcIterator<StdVectorFst> StdVectorMutableArcIterator;
+typedef StateIterator<StdVectorFst> StdVectorStateIterator;
 %}
 
 %inline %{
@@ -31,7 +34,7 @@ const int epsilon = 0;
     }
 }
 
-class Weight {
+struct Weight {
     float Value();
 };
 
@@ -92,14 +95,48 @@ struct StdVectorFst {
     StdVectorFst* Copy(bool reset = false) const;
 };
 
+struct StdVectorStateIterator {
+    StdVectorStateIterator(StdVectorFst const &);
+    void Next();
+    void Reset();
+    bool Done() const;
+    int Value() const;
+};
+
+struct StdVectorArcIterator {
+    StdVectorArcIterator(StdVectorFst const &, int);
+    void Next();
+    void Reset();
+    void Seek(unsigned long);
+    unsigned long Position() const;
+    bool Done() const;
+    const StdArc & Value() const;
+};
+
+struct StdVectorMutableArcIterator {
+    StdVectorMutableArcIterator(StdVectorFst *, int);
+    void Next();
+    void Reset();
+    void Seek(unsigned long);
+    unsigned long Position() const;
+    bool Done() const;
+    const StdArc & Value() const;
+    void SetValue(StdArc const &);
+};
+
 %pythoncode %{
-class SymbolTable_iter(object):
+class IteratorProxy(object):
+    "Base class for Pythonic proxies of OpenFst iterators."
     def __init__(self, itor):
         self.first = True
         self.itor = itor
 
     def __iter__(self):
         return self.__class__(self.itor)
+
+    def get(self):
+        "Method to be overriden which returns the iterator's value"
+        return self.itor
 
     def next(self):
         if self.first:
@@ -108,7 +145,22 @@ class SymbolTable_iter(object):
             self.itor.Next()
         if self.itor.Done():
             raise StopIteration
-        return self.itor
+        return self.get()
+
+class SymbolTable_iter(IteratorProxy):
+    def get(self):
+        return self.itor.Symbol(), self.itor.Value()
+
+class StdVectorFst_state_iter(IteratorProxy):
+    def get(self):
+        return self.itor.Value()
+
+class StdVectorFst_arc_iter(IteratorProxy):
+    def get(self):
+        return self.itor.Value()
+
+class StdVectorFst_mutable_arc_iter(IteratorProxy):
+    pass
 %}
 
 %extend SymbolTable {
@@ -119,6 +171,16 @@ def __iter__(self):
 }
 
 %extend StdVectorFst {
+    %pythoncode %{
+def __iter__(self):
+    return StdVectorFst_state_iter(StdVectorStateIterator(self))
+
+def iterarcs(self, stateid):
+    return StdVectorFst_arc_iter(StdVectorArcIterator(self, stateid))
+
+def mutable_iterarcs(self, stateid):
+    return StdVectorFst_arc_iter(StdVectorMutableArcIterator(self, stateid))
+%}
     bool IsFinal(int state) {
         return $self->Final(state)!=Weight::Zero();
     }
