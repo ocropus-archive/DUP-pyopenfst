@@ -1,6 +1,7 @@
 // -*- mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
 %module openfst
+%feature("autodoc");
 %include "typemaps.i"
 %include "cstring.i"
 %include "std_string.i"
@@ -43,14 +44,14 @@ struct StdArc {
     int olabel;
     int nextstate;
     Weight weight;
-    StdArc(int,int,float,int);
+    StdArc(int ilabel, int olabel, float weight, int nextstate);
 };
 
 struct SymbolTable {
-    SymbolTable(std::string const &);
-    long long AddSymbol(std::string const &, long long);
-    long long AddSymbol(std::string const &);
-    void AddTable(SymbolTable const &);
+    SymbolTable(std::string const & name);
+    long long AddSymbol(std::string const & name, long long id);
+    long long AddSymbol(std::string const & name);
+    void AddTable(SymbolTable const & symtab);
     std::string const & Name() const;
     std::string CheckSum() const;
     SymbolTable *Copy() const;
@@ -59,14 +60,14 @@ struct SymbolTable {
     bool WriteText(std::string const & filename) const;
     static SymbolTable *Read(std::string const & filename);
     bool Write(std::string const & filename) const;
-    std::string Find(long long) const;
-    long long Find(std::string const &);
+    std::string Find(long long id) const;
+    long long Find(std::string const & name);
     long long AvailableKey(void) const;
     unsigned long NumSymbols(void) const;
 };
 
 struct SymbolTableIterator {
-    SymbolTableIterator(SymbolTable const &);
+    SymbolTableIterator(SymbolTable const & symtab);
     bool Done(void);
     const char * Symbol(void);
     long long Value(void);
@@ -81,14 +82,14 @@ struct StdVectorFst {
     int NumStates();
     int NumArcs(int);
     void SetStart(int);
-    void AddArc(int,const StdArc &);
-    void SetFinal(int,float);
-    void ReserveStates(int);
-    void ReserveArcs(int,int);
+    void AddArc(int stateid, const StdArc & arc);
+    void SetFinal(int stateid, float weight);
+    void ReserveStates(int stateid);
+    void ReserveArcs(int stateid, int n);
     SymbolTable * InputSymbols();
     SymbolTable * OutputSymbols();
-    void SetInputSymbols(SymbolTable const *);
-    void SetOutputSymbols(SymbolTable const *);
+    void SetInputSymbols(SymbolTable const * symtab);
+    void SetOutputSymbols(SymbolTable const * symtab);
 
     static StdVectorFst* Read(std::string const & filename);
     bool Write(std::string const &filename);
@@ -96,7 +97,7 @@ struct StdVectorFst {
 };
 
 struct StdVectorStateIterator {
-    StdVectorStateIterator(StdVectorFst const &);
+    StdVectorStateIterator(StdVectorFst const & fst);
     void Next();
     void Reset();
     bool Done() const;
@@ -104,24 +105,24 @@ struct StdVectorStateIterator {
 };
 
 struct StdVectorArcIterator {
-    StdVectorArcIterator(StdVectorFst const &, int);
+    StdVectorArcIterator(StdVectorFst const & fst, int stateid);
     void Next();
     void Reset();
-    void Seek(unsigned long);
+    void Seek(unsigned long pos);
     unsigned long Position() const;
     bool Done() const;
     const StdArc & Value() const;
 };
 
 struct StdVectorMutableArcIterator {
-    StdVectorMutableArcIterator(StdVectorFst *, int);
+    StdVectorMutableArcIterator(StdVectorFst * fst, int stateid);
     void Next();
     void Reset();
-    void Seek(unsigned long);
+    void Seek(unsigned long pos);
     unsigned long Position() const;
     bool Done() const;
     const StdArc & Value() const;
-    void SetValue(StdArc const &);
+    void SetValue(StdArc const & arc);
 };
 
 %pythoncode %{
