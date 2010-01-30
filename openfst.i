@@ -305,7 +305,7 @@ def iterarcs(self, stateid):
 
 def mutable_iterarcs(self, stateid):
     """Return a mutable iterator over outgoing arcs from stateid."""
-    return StdVectorFst_arc_iter(StdVectorMutableArcIterator(self, stateid))
+    return StdVectorFst_mutable_arc_iter(StdVectorMutableArcIterator(self, stateid))
 %}
 
     %feature("docstring","Convenience function to test if a state is final.\n"
