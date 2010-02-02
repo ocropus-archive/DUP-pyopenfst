@@ -6,15 +6,16 @@
 %include "cstring.i"
 %include "std_string.i"
 %include "std_wstring.i"
+
 %{
 #include <fst/fstlib.h>
 #include <fst/symbol-table.h>
 #include <fst/arcsort.h>
 using namespace fst;
 typedef TropicalWeight Weight;
-typedef ArcIterator<StdVectorFst> StdVectorArcIterator;
-typedef MutableArcIterator<StdVectorFst> StdVectorMutableArcIterator;
-typedef StateIterator<StdVectorFst> StdVectorStateIterator;
+typedef StateIterator<StdFst> StdStateIterator;
+typedef ArcIterator<StdFst> StdArcIterator;
+typedef MutableArcIterator<StdMutableFst> StdMutableArcIterator;
 %}
 
 %inline %{
@@ -123,10 +124,74 @@ struct SymbolTableIterator {
     void Reset(void);
 };
 
+class StdFst {
+    %feature("docstring",
+             "Get the start state ID of this FST.");
+    virtual int Start() const = 0;
+    %feature("docstring",
+             "Check if the given state is a final state.  Returns its weight if\n"
+             "it is final, otherwise returns Weight.Zero() = inf.  Use IsFinal()\n"
+             "instead if all you are interested in doing is checking for finality.");
+    virtual Weight Final(int stateid) const = 0;
+    %feature("docstring", "Returns the number of states in this FST.");
+    virtual int NumStates() const = 0;
+    %feature("docstring", "Returns the number of arcs leaving the given state.");
+    virtual int NumArcs(int stateid) const = 0;
+};
+
+class StdMutableFst : public StdFst {
+    %feature("docstring",
+             "Get the start state ID of this FST.");
+    virtual int Start() const = 0;
+    %feature("docstring",
+             "Check if the given state is a final state.  Returns its weight if\n"
+             "it is final, otherwise returns Weight.Zero() = inf.  Use IsFinal()\n"
+             "instead if all you are interested in doing is checking for finality.");
+    virtual Weight Final(int stateid) const = 0;
+    %feature("docstring", "Returns the number of states in this FST.");
+    virtual int NumStates() const = 0;
+    %feature("docstring", "Returns the number of arcs leaving the given state.");
+    virtual int NumArcs(int stateid) const = 0;
+    %feature("docstring",
+             "Add a new state to this FST.  Returns the ID of this new state.");
+    virtual int AddState() const = 0;
+    %feature("docstring", "Set the start state.");
+    virtual void SetStart(int stateid) = 0;
+    %feature("docstring",
+             "Add an outgoing arc from the given state.  Symbols and weight are\n"
+             "given in the constructor to StdArc().");
+    virtual void AddArc(int stateid, const StdArc & arc) const = 0;
+    // DeleteStates, DeleteArcs
+    %feature("docstring",
+             "Mark the given state as final, with the specified weight.");
+    virtual void SetFinal(int stateid, float weight) const = 0;
+    %feature("docstring", "Returns the input symbol table.");
+    virtual SymbolTable * InputSymbols() = 0;
+    %feature("docstring", "Returns the output symbol table.");
+    virtual SymbolTable * OutputSymbols() = 0;
+    %feature("docstring",
+             "Sets the input symbol table.  Because of the semantics of SWIG, this\n"
+             "incurs a copy, and thus you should call it just before writing the FST\n"
+             "to a file, or any changes you may have made to the given symbol table\n"
+             "will not be reflected in the output file.");
+    virtual void SetInputSymbols(SymbolTable const * symtab) = 0;
+    %feature("docstring",
+             "Sets the output symbol table.  Because of the semantics of SWIG, this\n"
+             "incurs a copy, and thus you should call it just before writing the FST\n"
+             "to a file, or any changes you may have made to the given symbol table\n"
+             "will not be reflected in the output file.");
+    virtual void SetOutputSymbols(SymbolTable const * symtab) = 0;
+};
+
 %feature("docstring",
          "Standard FST class, using floating-point weights in the tropical semiring\n"
          "and an underlying implementation based on C++ vectors.") StdVectorFst;
-struct StdVectorFst {
+%feature("notabstract") StdVectorFst;
+class StdVectorFst : public StdMutableFst {
+public:
+    %feature("docstring", "constructor");
+    StdVectorFst();
+    StdVectorFst(StdFst const &fst);
     %feature("docstring",
              "Add a new state to this FST.  Returns the ID of this new state.");
     int AddState();
@@ -186,10 +251,10 @@ struct StdVectorFst {
          "Underlying iterator class over states.  Use Python iterator\n"
          "syntax instead, e.g.:\n\n"
          "for state in fst:\n"
-         "    ...\n") StdVectorStateIterator;
-struct StdVectorStateIterator {
+         "    ...\n") StdStateIterator;
+struct StdStateIterator {
     %feature("docstring", "constructor");
-    StdVectorStateIterator(StdVectorFst const & fst);
+    StdStateIterator(StdFst const & fst);
     %feature("docstring", "Advance the iterator.");
     void Next();
     %feature("docstring", "Reset the iterator.");
@@ -204,10 +269,10 @@ struct StdVectorStateIterator {
          "Underlying iterator class over arcs.  Use Python iterator\n"
          "syntax instead, e.g.:\n\n"
          "for state in fst:\n"
-         "    for arc in fst.iterarcs(state):\n") StdVectorArcIterator;
-struct StdVectorArcIterator {
+         "    for arc in fst.iterarcs(state):\n") StdArcIterator;
+struct StdArcIterator {
     %feature("docstring", "constructor");
-    StdVectorArcIterator(StdVectorFst const & fst, int stateid);
+    StdArcIterator(StdFst const & fst, int stateid);
     %feature("docstring", "Advance the iterator.");
     void Next();
     %feature("docstring", "Reset the iterator.");
@@ -227,10 +292,10 @@ struct StdVectorArcIterator {
          "made.  Use Python iterator\n"
          "syntax instead, e.g.:\n\n"
          "for state in fst:\n"
-         "    for arc in fst.mutable_iterarcs(state):\n") StdVectorMutableArcIterator;
-struct StdVectorMutableArcIterator {
+         "    for arc in fst.mutable_iterarcs(state):\n") StdMutableArcIterator;
+struct StdMutableArcIterator {
     %feature("docstring", "constructor");
-    StdVectorMutableArcIterator(StdVectorFst * fst, int stateid);
+    StdMutableArcIterator(StdMutableFst *fst, int stateid);
     %feature("docstring", "Advance the iterator.");
     void Next();
     %feature("docstring", "Reset the iterator.");
@@ -245,6 +310,25 @@ struct StdVectorMutableArcIterator {
     const StdArc & Value() const;
     %feature("docstring", "Modify the arc the iterator is currently pointing to.");
     void SetValue(StdArc const & arc);
+};
+
+%feature("docstring",
+         "Lazy composition of two FSTs.\n") StdComposeFst;
+%feature("notabstract") StdComposeFst;
+struct StdComposeFst : public StdFst {
+    %feature("docstring",
+             "Construct a lazy composition of FSTs A and B.");
+    StdComposeFst(StdFst const &fst1, StdFst const &fst2);
+    %feature("docstring",
+             "Get the start state ID of this FST.");
+    int Start();
+    %feature("docstring",
+             "Check if the given state is a final state.  Returns its weight if\n"
+             "it is final, otherwise returns Weight.Zero() = inf.  Use IsFinal()\n"
+             "instead if all you are interested in doing is checking for finality.");
+    Weight Final(int stateid);
+    %feature("docstring", "Returns the number of arcs leaving the given state.");
+    int NumArcs(int stateid);
 };
 
 %pythoncode %{
@@ -274,15 +358,15 @@ class SymbolTable_iter(IteratorProxy):
     def get(self):
         return self.itor.Symbol(), self.itor.Value()
 
-class StdVectorFst_state_iter(IteratorProxy):
+class StdFst_state_iter(IteratorProxy):
     def get(self):
         return self.itor.Value()
 
-class StdVectorFst_arc_iter(IteratorProxy):
+class StdFst_arc_iter(IteratorProxy):
     def get(self):
         return self.itor.Value()
 
-class StdVectorFst_mutable_arc_iter(IteratorProxy):
+class StdFst_mutable_arc_iter(IteratorProxy):
     pass
 %}
 
@@ -293,19 +377,59 @@ def __iter__(self):
 %}
 }
 
+%extend StdFst {
+    %pythoncode %{
+def __iter__(self):
+    """Return an iterator over state IDs."""
+    return StdFst_state_iter(StdStateIterator(self))
+
+def iterarcs(self, stateid):
+    """Return an iterator over outgoing arcs from stateid."""
+    return StdFst_arc_iter(StdArcIterator(self, stateid))
+%}
+}
+
+%extend StdComposeFst {
+    %pythoncode %{
+def __iter__(self):
+    """Return an iterator over state IDs."""
+    return StdFst_state_iter(StdStateIterator(self))
+
+def iterarcs(self, stateid):
+    """Return an iterator over outgoing arcs from stateid."""
+    return StdFst_arc_iter(StdArcIterator(self, stateid))
+%}
+}
+
+%extend StdMutableFst {
+    %pythoncode %{
+def __iter__(self):
+    """Return an iterator over state IDs."""
+    return StdFst_state_iter(StdStateIterator(self))
+
+def iterarcs(self, stateid):
+    """Return an iterator over outgoing arcs from stateid."""
+    return StdFst_arc_iter(StdArcIterator(self, stateid))
+
+def mutable_iterarcs(self, stateid):
+    """Return a mutable iterator over outgoing arcs from stateid."""
+    return StdFst_arc_iter(StdMutableArcIterator(self, stateid))
+%}
+}
+
 %extend StdVectorFst {
     %pythoncode %{
 def __iter__(self):
     """Return an iterator over state IDs."""
-    return StdVectorFst_state_iter(StdVectorStateIterator(self))
+    return StdFst_state_iter(StdStateIterator(self))
 
 def iterarcs(self, stateid):
     """Return an iterator over outgoing arcs from stateid."""
-    return StdVectorFst_arc_iter(StdVectorArcIterator(self, stateid))
+    return StdFst_arc_iter(StdArcIterator(self, stateid))
 
 def mutable_iterarcs(self, stateid):
     """Return a mutable iterator over outgoing arcs from stateid."""
-    return StdVectorFst_arc_iter(StdVectorMutableArcIterator(self, stateid))
+    return StdFst_arc_iter(StdMutableArcIterator(self, stateid))
 %}
 
     %feature("docstring","Convenience function to test if a state is final.\n"
@@ -481,14 +605,14 @@ def mutable_iterarcs(self, stateid):
          "Epsilon normalize an FST on the output side.") EpsNormOutput;
 
 %inline %{
-    char *GetString(StdVectorFst *fst,int which=0) {
+    char *GetString(StdMutableFst *fst,int which=0) {
         char result[100000];
         int index = 0;
         int state = fst->Start();
         if(state<0) return 0;
         for(;;) {
             if(fst->Final(state)!=Weight::Zero()) break;
-            ArcIterator<StdVectorFst> iter(*fst,state);
+            ArcIterator<StdMutableFst> iter(*fst,state);
             iter.Seek(which);
             StdArc arc(iter.Value());
             result[index++] = arc.olabel;
@@ -505,14 +629,14 @@ def mutable_iterarcs(self, stateid):
         result[index++] = 0;
         return strdup(result);
     }
-    wchar_t *WGetString(StdVectorFst *fst,int which=0) {
+    wchar_t *WGetString(StdMutableFst *fst,int which=0) {
         wchar_t result[100000];
         int index = 0;
         int state = fst->Start();
         if(state<0) return 0;
         for(;;) {
             if(fst->Final(state)!=Weight::Zero()) break;
-            ArcIterator<StdVectorFst> iter(*fst,state);
+            ArcIterator<StdMutableFst> iter(*fst,state);
             iter.Seek(which);
             StdArc arc(iter.Value());
             result[index++] = arc.olabel;
@@ -534,95 +658,95 @@ def mutable_iterarcs(self, stateid):
     StdVectorFst *Read(const char *s) {
         return StdVectorFst::Read(s);
     }
-    void ArcSortOutput(StdVectorFst *fst) {
+    void ArcSortOutput(StdMutableFst *fst) {
         ArcSort(fst,StdOLabelCompare());
     }
-    void ArcSortInput(StdVectorFst *fst) {
+    void ArcSortInput(StdMutableFst *fst) {
         ArcSort(fst,StdILabelCompare());
     }
-    void ProjectInput(StdVectorFst *result) {
+    void ProjectInput(StdMutableFst *result) {
         Project(result,PROJECT_INPUT);
     }
-    void ProjectOutput(StdVectorFst *result) {
+    void ProjectOutput(StdMutableFst *result) {
         Project(result,PROJECT_OUTPUT);
     }
-    void ClosureStar(StdVectorFst *fst) {
+    void ClosureStar(StdMutableFst *fst) {
         Closure(fst,CLOSURE_STAR);
     }
-    void ClosurePlus(StdVectorFst *fst) {
+    void ClosurePlus(StdMutableFst *fst) {
         Closure(fst,CLOSURE_PLUS);
     }
-    void ConcatOnto(StdVectorFst *fst,StdVectorFst &fst2) {
+    void ConcatOnto(StdMutableFst *fst,StdFst const &fst2) {
         Concat(fst,fst2);
     }
-    void ConcatOntoOther(StdVectorFst &fst,StdVectorFst *fst2) {
+    void ConcatOntoOther(StdFst const &fst,StdMutableFst *fst2) {
         Concat(fst,fst2);
     }
-    void EpsNormInput(StdVectorFst &fst,StdVectorFst *out) {
+    void EpsNormInput(StdFst const &fst,StdMutableFst *out) {
         EpsNormalize(fst,out,EPS_NORM_INPUT);
     }
-    void EpsNormOutput(StdVectorFst &fst,StdVectorFst *out) {
+    void EpsNormOutput(StdFst const &fst,StdMutableFst *out) {
         EpsNormalize(fst,out,EPS_NORM_OUTPUT);
     }
 %}
 
 %feature("docstring",
          "Compose two FSTs placing the result in a newly initialized FST.") Compose;
-void Compose(StdVectorFst &fst1,StdVectorFst &fst2,StdVectorFst *result);
+void Compose(StdFst const &fst1, StdFst const &fst2, StdMutableFst *result);
 %feature("docstring",
          "Connect an FST.") Connect;
-void Connect(StdVectorFst *fst);
+void Connect(StdMutableFst *fst);
 // Decode
 // Encode
 %feature("docstring",
          "Determinize an FST, placing the result in a newly initialize FST.") Determinize;
-void Determinize(StdVectorFst &in,StdVectorFst *out);
+void Determinize(StdFst const &in, StdMutableFst *out);
 %feature("docstring",
          "Take the difference between two FSTs, placing the result in a\n"
          "newly initialized FST.") Difference;
-void Difference(StdVectorFst &fst,StdVectorFst &fst2,StdVectorFst *out);
+void Difference(StdFst const &fst, StdFst const &fst2, StdMutableFst *out);
 %feature("docstring",
          "Intersect two FSTs, placing the result in a\n"
          "newly initialized FST.") Intersect;
-void Intersect(StdVectorFst &fst,StdVectorFst &fst2,StdVectorFst *out);
+void Intersect(StdFst const &fst,StdFst const &fst2,StdMutableFst *out);
 %feature("docstring",
          "Invert an FST.") Invert;
-void Invert(StdVectorFst *fst);
+void Invert(StdMutableFst *fst);
 %feature("docstring",
          "Minimize an FST.") Minimize;
-void Minimize(StdVectorFst *fst);
+void Minimize(StdMutableFst *fst);
 %feature("docstring",
          "Prune an FST, removing all arcs above threshold") Prune;
-void Prune(StdVectorFst *fst,float threshold);
+void Prune(StdMutableFst *fst,float threshold);
 %feature("docstring",
          "??") RandEquivalent;
-bool RandEquivalent(StdVectorFst &fst,StdVectorFst &fst2,int n);
+bool RandEquivalent(StdFst const &fst,StdFst const &fst2,int n);
 %feature("docstring",
          "??") RandGen;
-void RandGen(StdVectorFst &fst,StdVectorFst *out);
+void RandGen(StdFst const &fst,StdMutableFst *out);
 // Replace
 %feature("docstring",
          "Reverse an FST, placing result in a newly initialized FST.") Reverse;
-void Reverse(StdVectorFst &fst,StdVectorFst *out);
+void Reverse(StdFst const &fst,StdMutableFst *out);
 // Reweight
 %feature("docstring",
          "Remove epsilon transitions from an FST.") RmEpsilon;
-void RmEpsilon(StdVectorFst *out);
+void RmEpsilon(StdMutableFst *out);
 // ShortestDistance
 %feature("docstring",
          "Find N shortest paths in an FST placing results in a newly initialized FST.")
 ShortestPath;
-void ShortestPath(StdVectorFst &fst,StdVectorFst *out,int n);
+void ShortestPath(StdFst const &fst, StdMutableFst *out,int n);
 // Synchronize
 %feature("docstring",
          "Topologically sort an FST.") TopSort;
-void TopSort(StdVectorFst *fst);
+void TopSort(StdMutableFst *fst);
 %feature("docstring",
          "Take the union of two FSTs, placing the result in the first argument.") Union;
-void Union(StdVectorFst *out,StdVectorFst &fst);
+void Union(StdMutableFst *out,StdFst const &fst);
 %feature("docstring",
          "Verify an FST.") Verify;
-void Verify(StdVectorFst &fst);
+void Verify(StdFst const &fst);
 
 %newobject Copy;
 %feature("docstring", "Copy an FST.") Copy;
