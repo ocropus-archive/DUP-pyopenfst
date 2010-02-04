@@ -12,10 +12,15 @@
 #include <fst/symbol-table.h>
 #include <fst/arcsort.h>
 using namespace fst;
+typedef Fst<LogArc> LogFst;
+typedef MutableFst<LogArc> LogMutableFst;
 typedef TropicalWeight Weight;
 typedef StateIterator<StdFst> StdStateIterator;
+typedef StateIterator<LogFst> LogStateIterator;
 typedef ArcIterator<StdFst> StdArcIterator;
+typedef ArcIterator<LogFst> LogArcIterator;
 typedef MutableArcIterator<StdMutableFst> StdMutableArcIterator;
+typedef MutableArcIterator<LogMutableFst> LogMutableArcIterator;
 %}
 
 %inline %{
@@ -54,8 +59,27 @@ struct Weight {
 };
 
 %feature("docstring",
-         "Standard arc class, using floating-point weights in the tropical semiring.") StdArc;
-struct StdArc {
+         "Standard weight class, using floating-point values in the log semiring.") LogWeight;
+class LogWeight {
+public:
+    %feature("docstring", "Get the floating-point value of a weight.");
+    float Value();
+    %feature("docstring",
+             "Returns the zero weight for this semiring.  This is the weight which\n"
+             "acts as an annihilator for multiplication and an identity for addition.\n"
+             "For the standard weight class, its value is positive infinity.");
+    static LogWeight const Zero();
+    %feature("docstring",
+             "Returns the one value for this semiring.  This is the weight which\n"
+             "acts as an identity for multiplication.\n"
+             "For the standard weight class, its value is zero.");
+    static LogWeight const One();
+};
+
+/* Template for Arc classes. */
+template <class W> class ArcTpl {
+public:
+    typedef W Weight;
     %feature("docstring", "Numeric ID of the input label for this arc.");
     int ilabel;
     %feature("docstring", "Numeric ID of the output label for this arc.");
@@ -63,11 +87,20 @@ struct StdArc {
     %feature("docstring", "Destination state ID for this arc.");
     int nextstate;
     %feature("docstring", "Weight associated with this arc.");
-    Weight weight;
+    W weight;
     %feature("docstring", "Create a new arc with specified input and output labels,\n"
              "weight, and target state.  Use 0 as the label for epsilon arcs.");
-    StdArc(int ilabel, int olabel, float weight, int nextstate);
+    ArcTpl(int ilabel, int olabel, float weight, int nextstate);
 };
+/* Instantiate arc classes for our weights. */
+%feature("docstring",
+         "Standard arc class, using floating-point weights in the tropical semiring.") StdArc;
+%template(StdArc) ArcTpl<Weight>;
+typedef ArcTpl<Weight> StdArc;
+%feature("docstring",
+         "Standard arc class, using floating-point weights in the log semiring.") LogArc;
+%template(LogArc) ArcTpl<LogWeight>;
+typedef ArcTpl<LogWeight> LogArc;
 
 %feature("docstring",
          "Symbol table class, map input/output symbol IDs to and from strings.") SymbolTable;
@@ -107,8 +140,15 @@ struct SymbolTable {
     %feature("docstring",
              "Returns the number of unique symbols in this table.");
     unsigned long NumSymbols(void) const;
-};
 
+    %extend {
+        %pythoncode %{
+            def __iter__(self):
+                return SymbolTable_iter(SymbolTableIterator(self))
+        %}
+    }
+
+};
 
 %feature("docstring",
          "Underlying iterator class over SymbolTable objects.  Use Python iterator\n"
@@ -124,7 +164,7 @@ struct SymbolTableIterator {
     void Reset(void);
 };
 
-class StdFst {
+template<class A> class Fst {
     %feature("docstring",
              "Get the start state ID of this FST.");
     virtual int Start() const = 0;
@@ -132,14 +172,20 @@ class StdFst {
              "Check if the given state is a final state.  Returns its weight if\n"
              "it is final, otherwise returns Weight.Zero() = inf.  Use IsFinal()\n"
              "instead if all you are interested in doing is checking for finality.");
-    virtual Weight Final(int stateid) const = 0;
+    virtual typename A::Weight Final(int stateid) const = 0;
     %feature("docstring", "Returns the number of states in this FST.");
     virtual int NumStates() const = 0;
     %feature("docstring", "Returns the number of arcs leaving the given state.");
     virtual int NumArcs(int stateid) const = 0;
+public:
+    typedef A Arc;
 };
+%template(StdFst) Fst<StdArc>;
+typedef Fst<StdArc> StdFst;
+%template(LogFst) Fst<LogArc>;
+typedef Fst<LogArc> LogFst;
 
-class StdMutableFst : public StdFst {
+template<class A> class MutableFst : public Fst<A> {
     %feature("docstring",
              "Get the start state ID of this FST.");
     virtual int Start() const = 0;
@@ -147,7 +193,7 @@ class StdMutableFst : public StdFst {
              "Check if the given state is a final state.  Returns its weight if\n"
              "it is final, otherwise returns Weight.Zero() = inf.  Use IsFinal()\n"
              "instead if all you are interested in doing is checking for finality.");
-    virtual Weight Final(int stateid) const = 0;
+    virtual typename A::Weight Final(int stateid) const = 0;
     %feature("docstring", "Returns the number of states in this FST.");
     virtual int NumStates() const = 0;
     %feature("docstring", "Returns the number of arcs leaving the given state.");
@@ -159,8 +205,8 @@ class StdMutableFst : public StdFst {
     virtual void SetStart(int stateid) = 0;
     %feature("docstring",
              "Add an outgoing arc from the given state.  Symbols and weight are\n"
-             "given in the constructor to StdArc().");
-    virtual void AddArc(int stateid, const StdArc & arc) const = 0;
+             "given in the constructor for arc.");
+    virtual void AddArc(int stateid, const A & arc) const = 0;
     // DeleteStates, DeleteArcs
     %feature("docstring",
              "Mark the given state as final, with the specified weight.");
@@ -181,17 +227,20 @@ class StdMutableFst : public StdFst {
              "to a file, or any changes you may have made to the given symbol table\n"
              "will not be reflected in the output file.");
     virtual void SetOutputSymbols(SymbolTable const * symtab) = 0;
-};
-
-%feature("docstring",
-         "Standard FST class, using floating-point weights in the tropical semiring\n"
-         "and an underlying implementation based on C++ vectors.") StdVectorFst;
-%feature("notabstract") StdVectorFst;
-class StdVectorFst : public StdMutableFst {
 public:
+    typedef A Arc;
+};
+%template(StdMutableFst) MutableFst<StdArc>;
+typedef MutableFst<StdArc> StdMutableFst;
+%template(LogMutableFst) MutableFst<LogArc>;
+typedef MutableFst<LogArc> LogMutableFst;
+
+template<class A> class VectorFst : public MutableFst<A> {
+public:
+    typedef A Arc;
     %feature("docstring", "constructor");
-    StdVectorFst();
-    StdVectorFst(StdFst const &fst);
+    VectorFst();
+    VectorFst(Fst<A> const &fst);
     %feature("docstring",
              "Add a new state to this FST.  Returns the ID of this new state.");
     int AddState();
@@ -202,7 +251,7 @@ public:
              "Check if the given state is a final state.  Returns its weight if\n"
              "it is final, otherwise returns Weight.Zero() = inf.  Use IsFinal()\n"
              "instead if all you are interested in doing is checking for finality.");
-    Weight Final(int stateid);
+    typename A::Weight Final(int stateid);
     %feature("docstring", "Returns the number of states in this FST.");
     int NumStates();
     %feature("docstring", "Returns the number of arcs leaving the given state.");
@@ -211,8 +260,8 @@ public:
     void SetStart(int stateid);
     %feature("docstring",
              "Add an outgoing arc from the given state.  Symbols and weight are\n"
-             "given in the constructor to StdArc().");
-    void AddArc(int stateid, const StdArc & arc);
+             "given in the constructor to arc.");
+    void AddArc(int stateid, const A & arc);
     %feature("docstring",
              "Mark the given state as final, with the specified weight.");
     void SetFinal(int stateid, float weight);
@@ -244,17 +293,25 @@ public:
     %feature("docstring", "Write this FST to a binary file.");
     bool Write(std::string const &filename);
     %feature("docstring", "Returns a copy of this FST.");
-    StdVectorFst* Copy(bool reset = false) const;
+    VectorFst<A>* Copy(bool reset = false) const;
 };
-
 %feature("docstring",
-         "Underlying iterator class over states.  Use Python iterator\n"
-         "syntax instead, e.g.:\n\n"
-         "for state in fst:\n"
-         "    ...\n") StdStateIterator;
-struct StdStateIterator {
+         "Standard FST class, using floating-point weights in the tropical semiring\n"
+         "and an underlying implementation based on C++ vectors.") StdVectorFst;
+%feature("notabstract") VectorFst<StdArc>;
+%template(StdVectorFst) VectorFst<StdArc>;
+typedef VectorFst<StdArc> StdVectorFst;
+%feature("docstring",
+         "Standard FST class, using floating-point weights in the log semiring\n"
+         "and an underlying implementation based on C++ vectors.") LogVectorFst;
+%feature("notabstract") VectorFst<LogArc>;
+%template(LogVectorFst) VectorFst<LogArc>;
+typedef VectorFst<LogArc> StdVectorFst;
+
+template<class F> class StateIterator {
+public:
     %feature("docstring", "constructor");
-    StdStateIterator(StdFst const & fst);
+    StateIterator(F const & fst);
     %feature("docstring", "Advance the iterator.");
     void Next();
     %feature("docstring", "Reset the iterator.");
@@ -264,15 +321,59 @@ struct StdStateIterator {
     %feature("docstring", "Get the state ID the iterator is currently pointing to.");
     int Value() const;
 };
+%feature("docstring",
+         "Underlying iterator class over states.  Use Python iterator\n"
+         "syntax instead, e.g.:\n\n"
+         "for state in fst:\n"
+         "    ...\n") StdStateIterator;
+%template(StdStateIterator) StateIterator<StdFst>;
+typedef StateIterator<StdFst> StdStateIterator;
+%feature("docstring",
+         "Underlying iterator class over states.  Use Python iterator\n"
+         "syntax instead, e.g.:\n\n"
+         "for state in fst:\n"
+         "    ...\n") LogStateIterator;
+%template(LogStateIterator) StateIterator<LogFst>;
+typedef StateIterator<LogFst> LogStateIterator;
 
+template<class F> class ArcIterator {
+public:
+    typedef typename F::Arc Arc;
+    %feature("docstring", "constructor");
+    ArcIterator(F const & fst, int stateid);
+    %feature("docstring", "Advance the iterator.");
+    void Next();
+    %feature("docstring", "Reset the iterator.");
+    void Reset();
+    %feature("docstring", "Seek to position.");
+    void Seek(unsigned long pos);
+    %feature("docstring", "Get current position.");
+    unsigned long Position() const;
+    %feature("docstring", "Returns true if the iterator is done.");
+    bool Done() const;
+    %feature("docstring", "Get the arc the iterator is currently pointing to.");
+    const Arc & Value() const;
+};
 %feature("docstring",
          "Underlying iterator class over arcs.  Use Python iterator\n"
          "syntax instead, e.g.:\n\n"
          "for state in fst:\n"
          "    for arc in fst.iterarcs(state):\n") StdArcIterator;
-struct StdArcIterator {
+%template(StdArcIterator) ArcIterator<StdFst>;
+typedef ArcIterator<StdFst> StdArcIterator;
+%feature("docstring",
+         "Underlying iterator class over arcs.  Use Python iterator\n"
+         "syntax instead, e.g.:\n\n"
+         "for state in fst:\n"
+         "    for arc in fst.iterarcs(state):\n") LogArcIterator;
+%template(LogArcIterator) ArcIterator<LogFst>;
+typedef ArcIterator<LogFst> LogArcIterator;
+
+template<class F> class MutableArcIterator {
+public:
+    typedef typename F::Arc Arc;
     %feature("docstring", "constructor");
-    StdArcIterator(StdFst const & fst, int stateid);
+    MutableArcIterator(F *fst, int stateid);
     %feature("docstring", "Advance the iterator.");
     void Next();
     %feature("docstring", "Reset the iterator.");
@@ -284,41 +385,33 @@ struct StdArcIterator {
     %feature("docstring", "Returns true if the iterator is done.");
     bool Done() const;
     %feature("docstring", "Get the arc the iterator is currently pointing to.");
-    const StdArc & Value() const;
+    const Arc & Value() const;
+    %feature("docstring", "Modify the arc the iterator is currently pointing to.");
+    void SetValue(Arc const & arc);
 };
-
 %feature("docstring",
          "Underlying iterator class over arcs which allows changes to be\n"
          "made.  Use Python iterator\n"
          "syntax instead, e.g.:\n\n"
          "for state in fst:\n"
-         "    for arc in fst.mutable_iterarcs(state):\n") StdMutableArcIterator;
-struct StdMutableArcIterator {
-    %feature("docstring", "constructor");
-    StdMutableArcIterator(StdMutableFst *fst, int stateid);
-    %feature("docstring", "Advance the iterator.");
-    void Next();
-    %feature("docstring", "Reset the iterator.");
-    void Reset();
-    %feature("docstring", "Seek to position.");
-    void Seek(unsigned long pos);
-    %feature("docstring", "Get current position.");
-    unsigned long Position() const;
-    %feature("docstring", "Returns true if the iterator is done.");
-    bool Done() const;
-    %feature("docstring", "Get the arc the iterator is currently pointing to.");
-    const StdArc & Value() const;
-    %feature("docstring", "Modify the arc the iterator is currently pointing to.");
-    void SetValue(StdArc const & arc);
-};
-
+         "    for arciter in fst.mutable_iterarcs(state):\n"
+         "        arc = arciter.Value()\n") StdMutableArcIterator;
+%template(StdMutableArcIterator) MutableArcIterator<StdMutableFst>;
+typedef MutableArcIterator<StdMutableFst> StdMutableArcIterator;
 %feature("docstring",
-         "Lazy composition of two FSTs.\n") StdComposeFst;
-%feature("notabstract") StdComposeFst;
-struct StdComposeFst : public StdFst {
+         "Underlying iterator class over arcs which allows changes to be\n"
+         "made.  Use Python iterator\n"
+         "syntax instead, e.g.:\n\n"
+         "for state in fst:\n"
+         "    for arciter in fst.mutable_iterarcs(state):\n"
+         "        arc = arciter.Value()\n") StdMutableArcIterator;
+%template(LogMutableArcIterator) MutableArcIterator<LogMutableFst>;
+typedef MutableArcIterator<LogMutableFst> LogMutableArcIterator;
+
+template<class A> class ComposeFst : public Fst<A> {
     %feature("docstring",
              "Construct a lazy composition of FSTs A and B.");
-    StdComposeFst(StdFst const &fst1, StdFst const &fst2);
+    ComposeFst(Fst<A> const &fst1, Fst<A> const &fst2);
     %feature("docstring",
              "Get the start state ID of this FST.");
     int Start();
@@ -326,10 +419,20 @@ struct StdComposeFst : public StdFst {
              "Check if the given state is a final state.  Returns its weight if\n"
              "it is final, otherwise returns Weight.Zero() = inf.  Use IsFinal()\n"
              "instead if all you are interested in doing is checking for finality.");
-    Weight Final(int stateid);
+    typename A::Weight Final(int stateid);
     %feature("docstring", "Returns the number of arcs leaving the given state.");
     int NumArcs(int stateid);
 };
+%feature("docstring",
+         "Lazy composition of two FSTs.\n") StdComposeFst;
+%feature("notabstract") ComposeFst<StdArc>;
+%template(StdComposeFst) ComposeFst<StdArc>;
+typedef ComposeFst<StdArc> StdComposeFst;
+%feature("docstring",
+         "Lazy composition of two FSTs.\n") LogComposeFst;
+%feature("notabstract") ComposeFst<LogArc>;
+%template(LogComposeFst) ComposeFst<LogArc>;
+typedef ComposeFst<LogArc> LogComposeFst;
 
 %pythoncode %{
 class IteratorProxy(object):
@@ -358,78 +461,127 @@ class SymbolTable_iter(IteratorProxy):
     def get(self):
         return self.itor.Symbol(), self.itor.Value()
 
-class StdFst_state_iter(IteratorProxy):
+class Fst_state_iter(IteratorProxy):
     def get(self):
         return self.itor.Value()
 
-class StdFst_arc_iter(IteratorProxy):
+class Fst_arc_iter(IteratorProxy):
     def get(self):
         return self.itor.Value()
 
-class StdFst_mutable_arc_iter(IteratorProxy):
+class Fst_mutable_arc_iter(IteratorProxy):
     pass
 %}
 
-%extend SymbolTable {
-    %pythoncode %{
-def __iter__(self):
-    return SymbolTable_iter(SymbolTableIterator(self))
-%}
-}
-
-%extend StdFst {
+/* Actually I think it's possible to template these. */
+%extend Fst<StdArc> {
     %pythoncode %{
 def __iter__(self):
     """Return an iterator over state IDs."""
-    return StdFst_state_iter(StdStateIterator(self))
+    return Fst_state_iter(StdStateIterator(self))
 
 def iterarcs(self, stateid):
     """Return an iterator over outgoing arcs from stateid."""
-    return StdFst_arc_iter(StdArcIterator(self, stateid))
+    return Fst_arc_iter(StdArcIterator(self, stateid))
 %}
 }
-
-%extend StdComposeFst {
+%extend Fst<LogArc> {
     %pythoncode %{
 def __iter__(self):
     """Return an iterator over state IDs."""
-    return StdFst_state_iter(StdStateIterator(self))
+    return Fst_state_iter(LogStateIterator(self))
 
 def iterarcs(self, stateid):
     """Return an iterator over outgoing arcs from stateid."""
-    return StdFst_arc_iter(StdArcIterator(self, stateid))
+    return Fst_arc_iter(LogArcIterator(self, stateid))
 %}
 }
-
-%extend StdMutableFst {
+%extend ComposeFst<StdArc> {
     %pythoncode %{
 def __iter__(self):
     """Return an iterator over state IDs."""
-    return StdFst_state_iter(StdStateIterator(self))
+    return Fst_state_iter(StdStateIterator(self))
 
 def iterarcs(self, stateid):
     """Return an iterator over outgoing arcs from stateid."""
-    return StdFst_arc_iter(StdArcIterator(self, stateid))
+    return Fst_arc_iter(StdArcIterator(self, stateid))
+%}
+}
+%extend ComposeFst<LogArc> {
+    %pythoncode %{
+def __iter__(self):
+    """Return an iterator over state IDs."""
+    return Fst_state_iter(LogStateIterator(self))
+
+def iterarcs(self, stateid):
+    """Return an iterator over outgoing arcs from stateid."""
+    return Fst_arc_iter(LogArcIterator(self, stateid))
+%}
+}
+%extend MutableFst<StdArc> {
+    %pythoncode %{
+def __iter__(self):
+    """Return an iterator over state IDs."""
+    return Fst_state_iter(StdStateIterator(self))
+
+def iterarcs(self, stateid):
+    """Return an iterator over outgoing arcs from stateid."""
+    return Fst_arc_iter(StdArcIterator(self, stateid))
 
 def mutable_iterarcs(self, stateid):
     """Return a mutable iterator over outgoing arcs from stateid."""
-    return StdFst_arc_iter(StdMutableArcIterator(self, stateid))
+    return Fst_arc_iter(StdMutableArcIterator(self, stateid))
 %}
 }
-
-%extend StdVectorFst {
+%extend MutableFst<LogArc> {
     %pythoncode %{
 def __iter__(self):
     """Return an iterator over state IDs."""
-    return StdFst_state_iter(StdStateIterator(self))
+    return Fst_state_iter(LogStateIterator(self))
 
 def iterarcs(self, stateid):
     """Return an iterator over outgoing arcs from stateid."""
-    return StdFst_arc_iter(StdArcIterator(self, stateid))
+    return Fst_arc_iter(LogArcIterator(self, stateid))
 
 def mutable_iterarcs(self, stateid):
     """Return a mutable iterator over outgoing arcs from stateid."""
-    return StdFst_arc_iter(StdMutableArcIterator(self, stateid))
+    return Fst_arc_iter(LogMutableArcIterator(self, stateid))
+%}
+}
+%extend VectorFst<LogArc> {
+    %pythoncode %{
+def __iter__(self):
+    """Return an iterator over state IDs."""
+    return Fst_state_iter(LogStateIterator(self))
+
+def iterarcs(self, stateid):
+    """Return an iterator over outgoing arcs from stateid."""
+    return Fst_arc_iter(LogArcIterator(self, stateid))
+
+def mutable_iterarcs(self, stateid):
+    """Return a mutable iterator over outgoing arcs from stateid."""
+    return Fst_arc_iter(LogMutableArcIterator(self, stateid))
+%}
+
+    %feature("docstring","Convenience function to test if a state is final.\n"
+             "Use this instead of the Final() method\n") IsFinal;
+    bool IsFinal(int state) {
+        return $self->Final(state)!=LogWeight::Zero();
+    }
+}
+%extend VectorFst<StdArc> {
+    %pythoncode %{
+def __iter__(self):
+    """Return an iterator over state IDs."""
+    return Fst_state_iter(StdStateIterator(self))
+
+def iterarcs(self, stateid):
+    """Return an iterator over outgoing arcs from stateid."""
+    return Fst_arc_iter(StdArcIterator(self, stateid))
+
+def mutable_iterarcs(self, stateid):
+    """Return a mutable iterator over outgoing arcs from stateid."""
+    return Fst_arc_iter(StdMutableArcIterator(self, stateid))
 %}
 
     %feature("docstring","Convenience function to test if a state is final.\n"
