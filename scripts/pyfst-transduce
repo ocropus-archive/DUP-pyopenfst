@@ -13,7 +13,7 @@ openfst.ArcSortOutput(str)
 openfst.ArcSortInput(fst)
 
 result = openfst.StdVectorFst()
-openfst.Compose(fst,str,result)
+openfst.Compose(str,fst,result)
 openfst.ProjectOutput(result)
 
 best = openfst.StdVectorFst()
