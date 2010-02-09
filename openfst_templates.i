@@ -86,6 +86,7 @@ public:
 template<class A> class VectorFst : public MutableFst<A> {
 public:
     typedef A Arc;
+
     %feature("docstring", "constructor");
     VectorFst();
     VectorFst(Fst<A> const &fst);
@@ -142,6 +143,152 @@ public:
     bool Write(std::string const &filename);
     %feature("docstring", "Returns a copy of this FST.");
     VectorFst<A>* Copy(bool reset = false) const;
+
+    %feature("docstring","Convenience function to test if a state is final.\n"
+             "Use this instead of the Final() method\n") IsFinal;
+    %extend {
+        bool IsFinal(int state) {
+            return $self->Final(state)!=A::Weight::Zero();
+        }
+        %feature("docstring",
+                 "Get the final weight for the given state.  Use this instead of\n"
+                 "the Final() method.")
+             FinalWeight;
+        float FinalWeight(int state) {
+            return $self->Final(state).Value();
+        }
+        %feature("docstring",
+                 "Convenience method which adds an arc without the need to\n"
+                 "explicitly create a StdArc object.")
+             AddArc;
+        void AddArc(int from,int ilabel,int olabel,float weight,int to) {
+            $self->AddArc(from,A(ilabel,olabel,weight,to));
+        }
+        %feature("docstring",
+                 "Convenience method which returns the jth arc exiting state i.")
+             GetArc;
+        A GetArc(int i,int j) {
+            ArcIterator<VectorFst<A > > iter(*$self,i);
+            iter.Seek(j);
+            return iter.Value();
+        }
+        %feature("docstring",
+                 "Convenience method which returns the input label for the jth\n"
+                 "arc exiting state i.")
+             GetInput;
+        int GetInput(int i,int j) {
+            ArcIterator<VectorFst<A > > iter(*$self,i);
+            iter.Seek(j);
+            return iter.Value().ilabel;
+        }
+        %feature("docstring",
+                 "Convenience method which returns the output label for the jth\n"
+                 "arc exiting state i.")
+             GetOutput;
+        int GetOutput(int i,int j) {
+            ArcIterator<VectorFst<A > > iter(*$self,i);
+            iter.Seek(j);
+            return iter.Value().olabel;
+        }
+        %feature("docstring",
+                 "Convenience method which returns the weight for the jth\n"
+                 "arc exiting state i.")
+             GetWeight;
+        float GetWeight(int i,int j) {
+            ArcIterator<VectorFst<A > > iter(*$self,i);
+            iter.Seek(j);
+            return iter.Value().weight.Value();
+        }
+        %feature("docstring",
+                 "Convenience method which returns the target state for the jth\n"
+                 "arc exiting state i.")
+             GetNext;
+        int GetNext(int i,int j) {
+            ArcIterator<VectorFst<A > > iter(*$self,i);
+            iter.Seek(j);
+            return iter.Value().nextstate;;
+        }
+
+        %feature("docstring", "Add nodes and arcs to recognize a character string.") AddString;
+        void AddString(const char *s,float icost=0.0,float fcost=0.0,float ccost=0.0) {
+            int state = $self->Start();
+            if(state<0) {
+                state = $self->AddState();
+                $self->SetStart(state);
+            }
+            for(int i=0;s[i];i++) {
+                int nstate = $self->AddState();
+                float xcost = ccost + (i==0?icost:0);
+                int c = s[i];
+                if(c<0 || c>10000000)
+                    throw "AddString: bad character";
+                $self->AddArc(state,A(c,c,xcost,nstate));
+                state = nstate;
+            }
+            $self->SetFinal(state,fcost);
+        }
+        %feature("docstring", "Add nodes and arcs to recognize a wide character string.")
+             AddWString;
+        void AddWString(const wchar_t *s,float icost=0.0,float fcost=0.0,float ccost=0.0) {
+            int state = $self->Start();
+            if(state<0) {
+                state = $self->AddState();
+                $self->SetStart(state);
+            }
+            for(int i=0;s[i];i++) {
+                int nstate = $self->AddState();
+                float xcost = ccost + (i==0?icost:0);
+                $self->AddArc(state,A(s[i],s[i],xcost,nstate));
+                state = nstate;
+            }
+            $self->SetFinal(state,fcost);
+        }
+        %feature("docstring", "Add nodes and arcs to transduce one string into another.")
+             AddTranslation;
+        void AddTranslation(const char *in,const char *out,float icost=0.0,float fcost=0.0,float ccost=0.0) {
+            int state = $self->Start();
+            if(state<0) {
+                state = $self->AddState();
+                $self->SetStart(state);
+            }
+            for(int i=0;in[i];i++) {
+                int nstate = $self->AddState();
+                float xcost = ccost + (i==0?icost:0);
+                $self->AddArc(state,A(in[i],epsilon,xcost,nstate));
+                state = nstate;
+            }
+            for(int i=0;out[i];i++) {
+                int nstate = $self->AddState();
+                $self->AddArc(state,A(epsilon,out[i],ccost,nstate));
+                state = nstate;
+            }
+            $self->SetFinal(state,fcost);
+        }
+        %feature("docstring",
+                 "Add nodes and arcs to transduce one wide character string into another.")
+             AddWTranslation;
+        void AddWTranslation(const wchar_t *in,const wchar_t *out,float icost=0.0,float fcost=0.0,float ccost=0.0) {
+            int state = $self->Start();
+            if(state<0) {
+                state = $self->AddState();
+                $self->SetStart(state);
+            }
+            const int OEPS = 0;
+            const int IEPS = 0;
+            for(int i=0;in[i];i++) {
+                int nstate = $self->AddState();
+                float xcost = ccost + (i==0?icost:0);
+                $self->AddArc(state,A(in[i],OEPS,xcost,nstate));
+                state = nstate;
+            }
+            for(int i=0;out[i];i++) {
+                int nstate = $self->AddState();
+                $self->AddArc(state,A(IEPS,out[i],ccost,nstate));
+                state = nstate;
+            }
+            $self->SetFinal(state,fcost);
+        }
+    }
 };
 
 /* Template for lazy composition FSTs. */

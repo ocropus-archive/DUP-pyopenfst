@@ -43,6 +43,8 @@ const int epsilon = 0;
 %include "openfst_weights.i"
 /* Symbol tables. */
 %include "openfst_symtab.i"
+/* Pythonic iterators. */
+%include "openfst_iterators.i"
 
 /* Instantiate arc classes. */
 %feature("docstring",
@@ -124,300 +126,83 @@ const int epsilon = 0;
 %feature("notabstract") ComposeFst<LogArc>;
 %template(LogComposeFst) ComposeFst<LogArc>;
 
-%pythoncode %{
-class IteratorProxy(object):
-    "Base class for Pythonic proxies of OpenFst iterators."
-    def __init__(self, itor):
-        self.first = True
-        self.itor = itor
+/* Instantiate template functions. */
+%feature("docstring",
+         "Compose two FSTs placing the result in a newly initialized FST.") Compose;
+void Compose(StdFst const &fst1, StdFst const &fst2, StdMutableFst *result);
+void Compose(LogFst const &fst1, LogFst const &fst2, LogMutableFst *result);
+%feature("docstring",
+         "Connect an FST.") Connect;
+void Connect(StdMutableFst *fst);
+void Connect(LogMutableFst *fst);
 
-    def __iter__(self):
-        return self.__class__(self.itor)
+// Decode
+// Encode
+%feature("docstring",
+         "Determinize an FST, placing the result in a newly initialize FST.") Determinize;
+void Determinize(StdFst const &in, StdMutableFst *out);
+void Determinize(LogFst const &in, LogMutableFst *out);
+%feature("docstring",
+         "Take the difference between two FSTs, placing the result in a\n"
+         "newly initialized FST.") Difference;
+void Difference(StdFst const &fst, StdFst const &fst2, StdMutableFst *out);
+void Difference(LogFst const &fst, LogFst const &fst2, LogMutableFst *out);
+%feature("docstring",
+         "Intersect two FSTs, placing the result in a\n"
+         "newly initialized FST.") Intersect;
+void Intersect(StdFst const &fst,StdFst const &fst2,StdMutableFst *out);
+void Intersect(LogFst const &fst,LogFst const &fst2,LogMutableFst *out);
+%feature("docstring",
+         "Invert an FST.") Invert;
+void Invert(StdMutableFst *fst);
+void Invert(LogMutableFst *fst);
+%feature("docstring",
+         "Minimize an FST.") Minimize;
+void Minimize(StdMutableFst *fst);
+void Minimize(LogMutableFst *fst);
+%feature("docstring",
+         "Prune an FST, removing all arcs above threshold") Prune;
+void Prune(StdMutableFst *fst,float threshold);
+void Prune(LogMutableFst *fst,float threshold);
+%feature("docstring",
+         "??") RandEquivalent;
+bool RandEquivalent(StdFst const &fst,StdFst const &fst2,int n);
+bool RandEquivalent(LogFst const &fst,LogFst const &fst2,int n);
+%feature("docstring",
+         "??") RandGen;
+void RandGen(StdFst const &fst,StdMutableFst *out);
+void RandGen(LogFst const &fst,LogMutableFst *out);
+// Replace
+%feature("docstring",
+         "Reverse an FST, placing result in a newly initialized FST.") Reverse;
+void Reverse(StdFst const &fst,StdMutableFst *out);
+void Reverse(LogFst const &fst,LogMutableFst *out);
+// Reweight
+%feature("docstring",
+         "Remove epsilon transitions from an FST.") RmEpsilon;
+void RmEpsilon(StdMutableFst *out);
+void RmEpsilon(LogMutableFst *out);
+// ShortestDistance
+%feature("docstring",
+         "Find N shortest paths in an FST placing results in a newly initialized FST.")
+ShortestPath;
+void ShortestPath(StdFst const &fst, StdMutableFst *out,int n);
+void ShortestPath(LogFst const &fst, LogMutableFst *out,int n);
+// Synchronize
+%feature("docstring",
+         "Topologically sort an FST.") TopSort;
+void TopSort(StdMutableFst *fst);
+void TopSort(LogMutableFst *fst);
+%feature("docstring",
+         "Take the union of two FSTs, placing the result in the first argument.") Union;
+void Union(StdMutableFst *out,StdFst const &fst);
+void Union(LogMutableFst *out,LogFst const &fst);
+%feature("docstring",
+         "Verify an FST.") Verify;
+void Verify(StdFst const &fst);
+void Verify(LogFst const &fst);
 
-    def get(self):
-        "Method to be overriden which returns the iterator's value"
-        return self.itor
-
-    def next(self):
-        if self.first:
-            self.first = False
-        else:
-            self.itor.Next()
-        if self.itor.Done():
-            raise StopIteration
-        return self.get()
-
-class SymbolTable_iter(IteratorProxy):
-    def get(self):
-        return self.itor.Symbol(), self.itor.Value()
-
-class Fst_state_iter(IteratorProxy):
-    def get(self):
-        return self.itor.Value()
-
-class Fst_arc_iter(IteratorProxy):
-    def get(self):
-        return self.itor.Value()
-
-class Fst_mutable_arc_iter(IteratorProxy):
-    pass
-%}
-
-/* Actually I think it's possible to template these. */
-%extend Fst<StdArc> {
-    %pythoncode %{
-def __iter__(self):
-    """Return an iterator over state IDs."""
-    return Fst_state_iter(StdStateIterator(self))
-
-def iterarcs(self, stateid):
-    """Return an iterator over outgoing arcs from stateid."""
-    return Fst_arc_iter(StdArcIterator(self, stateid))
-%}
-}
-%extend Fst<LogArc> {
-    %pythoncode %{
-def __iter__(self):
-    """Return an iterator over state IDs."""
-    return Fst_state_iter(LogStateIterator(self))
-
-def iterarcs(self, stateid):
-    """Return an iterator over outgoing arcs from stateid."""
-    return Fst_arc_iter(LogArcIterator(self, stateid))
-%}
-}
-%extend ComposeFst<StdArc> {
-    %pythoncode %{
-def __iter__(self):
-    """Return an iterator over state IDs."""
-    return Fst_state_iter(StdStateIterator(self))
-
-def iterarcs(self, stateid):
-    """Return an iterator over outgoing arcs from stateid."""
-    return Fst_arc_iter(StdArcIterator(self, stateid))
-%}
-}
-%extend ComposeFst<LogArc> {
-    %pythoncode %{
-def __iter__(self):
-    """Return an iterator over state IDs."""
-    return Fst_state_iter(LogStateIterator(self))
-
-def iterarcs(self, stateid):
-    """Return an iterator over outgoing arcs from stateid."""
-    return Fst_arc_iter(LogArcIterator(self, stateid))
-%}
-}
-%extend MutableFst<StdArc> {
-    %pythoncode %{
-def __iter__(self):
-    """Return an iterator over state IDs."""
-    return Fst_state_iter(StdStateIterator(self))
-
-def iterarcs(self, stateid):
-    """Return an iterator over outgoing arcs from stateid."""
-    return Fst_arc_iter(StdArcIterator(self, stateid))
-
-def mutable_iterarcs(self, stateid):
-    """Return a mutable iterator over outgoing arcs from stateid."""
-    return Fst_arc_iter(StdMutableArcIterator(self, stateid))
-%}
-}
-%extend MutableFst<LogArc> {
-    %pythoncode %{
-def __iter__(self):
-    """Return an iterator over state IDs."""
-    return Fst_state_iter(LogStateIterator(self))
-
-def iterarcs(self, stateid):
-    """Return an iterator over outgoing arcs from stateid."""
-    return Fst_arc_iter(LogArcIterator(self, stateid))
-
-def mutable_iterarcs(self, stateid):
-    """Return a mutable iterator over outgoing arcs from stateid."""
-    return Fst_arc_iter(LogMutableArcIterator(self, stateid))
-%}
-}
-%extend VectorFst<LogArc> {
-    %pythoncode %{
-def __iter__(self):
-    """Return an iterator over state IDs."""
-    return Fst_state_iter(LogStateIterator(self))
-
-def iterarcs(self, stateid):
-    """Return an iterator over outgoing arcs from stateid."""
-    return Fst_arc_iter(LogArcIterator(self, stateid))
-
-def mutable_iterarcs(self, stateid):
-    """Return a mutable iterator over outgoing arcs from stateid."""
-    return Fst_arc_iter(LogMutableArcIterator(self, stateid))
-%}
-
-    %feature("docstring","Convenience function to test if a state is final.\n"
-             "Use this instead of the Final() method\n") IsFinal;
-    bool IsFinal(int state) {
-        return $self->Final(state)!=LogWeight::Zero();
-    }
-}
-%extend VectorFst<StdArc> {
-    %pythoncode %{
-def __iter__(self):
-    """Return an iterator over state IDs."""
-    return Fst_state_iter(StdStateIterator(self))
-
-def iterarcs(self, stateid):
-    """Return an iterator over outgoing arcs from stateid."""
-    return Fst_arc_iter(StdArcIterator(self, stateid))
-
-def mutable_iterarcs(self, stateid):
-    """Return a mutable iterator over outgoing arcs from stateid."""
-    return Fst_arc_iter(StdMutableArcIterator(self, stateid))
-%}
-
-    %feature("docstring","Convenience function to test if a state is final.\n"
-             "Use this instead of the Final() method\n") IsFinal;
-    bool IsFinal(int state) {
-        return $self->Final(state)!=Weight::Zero();
-    }
-    %feature("docstring", "Add nodes and arcs to recognize a character string.") AddString;
-    void AddString(const char *s,float icost=0.0,float fcost=0.0,float ccost=0.0) {
-        int state = $self->Start();
-        if(state<0) {
-            state = $self->AddState();
-            $self->SetStart(state);
-        }
-        for(int i=0;s[i];i++) {
-            int nstate = $self->AddState();
-            float xcost = ccost + (i==0?icost:0);
-            int c = s[i];
-            if(c<0 || c>10000000)
-                throw "AddString: bad character";
-            $self->AddArc(state,StdArc(c,c,xcost,nstate));
-            state = nstate;
-        }
-        $self->SetFinal(state,fcost);
-    }
-    %feature("docstring", "Add nodes and arcs to recognize a wide character string.")
-         AddWString;
-    void AddWString(const wchar_t *s,float icost=0.0,float fcost=0.0,float ccost=0.0) {
-        int state = $self->Start();
-        if(state<0) {
-            state = $self->AddState();
-            $self->SetStart(state);
-        }
-        for(int i=0;s[i];i++) {
-            int nstate = $self->AddState();
-            float xcost = ccost + (i==0?icost:0);
-            $self->AddArc(state,StdArc(s[i],s[i],xcost,nstate));
-            state = nstate;
-        }
-        $self->SetFinal(state,fcost);
-    }
-    %feature("docstring", "Add nodes and arcs to transduce one string into another.")
-         AddTranslation;
-    void AddTranslation(const char *in,const char *out,float icost=0.0,float fcost=0.0,float ccost=0.0) {
-        int state = $self->Start();
-        if(state<0) {
-            state = $self->AddState();
-            $self->SetStart(state);
-        }
-        for(int i=0;in[i];i++) {
-            int nstate = $self->AddState();
-            float xcost = ccost + (i==0?icost:0);
-            $self->AddArc(state,StdArc(in[i],epsilon,xcost,nstate));
-            state = nstate;
-        }
-        for(int i=0;out[i];i++) {
-            int nstate = $self->AddState();
-            $self->AddArc(state,StdArc(epsilon,out[i],ccost,nstate));
-            state = nstate;
-        }
-        $self->SetFinal(state,fcost);
-    }
-    %feature("docstring",
-             "Add nodes and arcs to transduce one wide character string into another.")
-         AddWTranslation;
-    void AddWTranslation(const wchar_t *in,const wchar_t *out,float icost=0.0,float fcost=0.0,float ccost=0.0) {
-        int state = $self->Start();
-        if(state<0) {
-            state = $self->AddState();
-            $self->SetStart(state);
-        }
-        const int OEPS = 0;
-        const int IEPS = 0;
-        for(int i=0;in[i];i++) {
-            int nstate = $self->AddState();
-            float xcost = ccost + (i==0?icost:0);
-            $self->AddArc(state,StdArc(in[i],OEPS,xcost,nstate));
-            state = nstate;
-        }
-        for(int i=0;out[i];i++) {
-            int nstate = $self->AddState();
-            $self->AddArc(state,StdArc(IEPS,out[i],ccost,nstate));
-            state = nstate;
-        }
-        $self->SetFinal(state,fcost);
-    }
-    %feature("docstring",
-             "Get the final weight for the given state.  Use this instead of\n"
-             "the Final() method.")
-         FinalWeight;
-    float FinalWeight(int state) {
-        return $self->Final(state).Value();
-    }
-    %feature("docstring",
-             "Convenience method which adds an arc without the need to\n"
-             "explicitly create a StdArc object.")
-         AddArc;
-    void AddArc(int from,int ilabel,int olabel,float weight,int to) {
-        $self->AddArc(from,StdArc(ilabel,olabel,weight,to));
-    }
-    %feature("docstring",
-             "Convenience method which returns the jth arc exiting state i.")
-         GetArc;
-    StdArc GetArc(int i,int j) {
-        ArcIterator<StdVectorFst> iter(*$self,i);
-        iter.Seek(j);
-        return iter.Value();
-    }
-    %feature("docstring",
-             "Convenience method which returns the input label for the jth\n"
-             "arc exiting state i.")
-         GetInput;
-    int GetInput(int i,int j) {
-        ArcIterator<StdVectorFst> iter(*$self,i);
-        iter.Seek(j);
-        return iter.Value().ilabel;
-    }
-    %feature("docstring",
-             "Convenience method which returns the output label for the jth\n"
-             "arc exiting state i.")
-         GetOutput;
-    int GetOutput(int i,int j) {
-        ArcIterator<StdVectorFst> iter(*$self,i);
-        iter.Seek(j);
-        return iter.Value().olabel;
-    }
-    %feature("docstring",
-             "Convenience method which returns the weight for the jth\n"
-             "arc exiting state i.")
-         GetWeight;
-    float GetWeight(int i,int j) {
-        ArcIterator<StdVectorFst> iter(*$self,i);
-        iter.Seek(j);
-        return iter.Value().weight.Value();
-    }
-    %feature("docstring",
-             "Convenience method which returns the target state for the jth\n"
-             "arc exiting state i.")
-         GetNext;
-    int GetNext(int i,int j) {
-        ArcIterator<StdVectorFst> iter(*$self,i);
-        iter.Seek(j);
-        return iter.Value().nextstate;;
-    }
-}
-
+/* A whole bunch of custom functions for OCRopus (I think) */
 /* SWIG gets upset if these are inside an %inline block. */
 %feature("docstring",
          "Get string starting at given state.") GetString;
@@ -445,7 +230,6 @@ def mutable_iterarcs(self, stateid):
          "Epsilon normalize an FST on the input side.") EpsNormInput;
 %feature("docstring",
          "Epsilon normalize an FST on the output side.") EpsNormOutput;
-
 %inline %{
     char *GetString(StdMutableFst *fst,int which=0) {
         char result[100000];
@@ -457,7 +241,8 @@ def mutable_iterarcs(self, stateid):
             ArcIterator<StdMutableFst> iter(*fst,state);
             iter.Seek(which);
             StdArc arc(iter.Value());
-            result[index++] = arc.olabel;
+            if (arc.olabel != 0)
+                result[index++] = arc.olabel;
             if(index>=-1+sizeof result/sizeof result[0])
                 throw "string too long";
             int nstate = arc.nextstate;
@@ -481,7 +266,8 @@ def mutable_iterarcs(self, stateid):
             ArcIterator<StdMutableFst> iter(*fst,state);
             iter.Seek(which);
             StdArc arc(iter.Value());
-            result[index++] = arc.olabel;
+            if (arc.olabel != 0)
+                result[index++] = arc.olabel;
             if(index>=-1+sizeof result/sizeof result[0])
                 throw "string too long";
             int nstate = arc.nextstate;
@@ -532,70 +318,18 @@ def mutable_iterarcs(self, stateid):
     }
 %}
 
-%feature("docstring",
-         "Compose two FSTs placing the result in a newly initialized FST.") Compose;
-void Compose(StdFst const &fst1, StdFst const &fst2, StdMutableFst *result);
-%feature("docstring",
-         "Connect an FST.") Connect;
-void Connect(StdMutableFst *fst);
-// Decode
-// Encode
-%feature("docstring",
-         "Determinize an FST, placing the result in a newly initialize FST.") Determinize;
-void Determinize(StdFst const &in, StdMutableFst *out);
-%feature("docstring",
-         "Take the difference between two FSTs, placing the result in a\n"
-         "newly initialized FST.") Difference;
-void Difference(StdFst const &fst, StdFst const &fst2, StdMutableFst *out);
-%feature("docstring",
-         "Intersect two FSTs, placing the result in a\n"
-         "newly initialized FST.") Intersect;
-void Intersect(StdFst const &fst,StdFst const &fst2,StdMutableFst *out);
-%feature("docstring",
-         "Invert an FST.") Invert;
-void Invert(StdMutableFst *fst);
-%feature("docstring",
-         "Minimize an FST.") Minimize;
-void Minimize(StdMutableFst *fst);
-%feature("docstring",
-         "Prune an FST, removing all arcs above threshold") Prune;
-void Prune(StdMutableFst *fst,float threshold);
-%feature("docstring",
-         "??") RandEquivalent;
-bool RandEquivalent(StdFst const &fst,StdFst const &fst2,int n);
-%feature("docstring",
-         "??") RandGen;
-void RandGen(StdFst const &fst,StdMutableFst *out);
-// Replace
-%feature("docstring",
-         "Reverse an FST, placing result in a newly initialized FST.") Reverse;
-void Reverse(StdFst const &fst,StdMutableFst *out);
-// Reweight
-%feature("docstring",
-         "Remove epsilon transitions from an FST.") RmEpsilon;
-void RmEpsilon(StdMutableFst *out);
-// ShortestDistance
-%feature("docstring",
-         "Find N shortest paths in an FST placing results in a newly initialized FST.")
-ShortestPath;
-void ShortestPath(StdFst const &fst, StdMutableFst *out,int n);
-// Synchronize
-%feature("docstring",
-         "Topologically sort an FST.") TopSort;
-void TopSort(StdMutableFst *fst);
-%feature("docstring",
-         "Take the union of two FSTs, placing the result in the first argument.") Union;
-void Union(StdMutableFst *out,StdFst const &fst);
-%feature("docstring",
-         "Verify an FST.") Verify;
-void Verify(StdFst const &fst);
-
 %newobject Copy;
 %feature("docstring", "Copy an FST.") Copy;
 %inline %{
     StdVectorFst *Copy(StdVectorFst &fst) {
         // is there a method that does this directly?
         StdVectorFst *result = new StdVectorFst();
+        Union(result,fst);
+        return result;
+    }
+    LogVectorFst *Copy(LogVectorFst &fst) {
+        // is there a method that does this directly?
+        LogVectorFst *result = new LogVectorFst();
         Union(result,fst);
         return result;
     }
