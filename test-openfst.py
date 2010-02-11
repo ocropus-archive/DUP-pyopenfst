@@ -20,7 +20,7 @@ class narray(unittest.TestCase):
         assert "hello"==openfst.GetString(fst)
     def testAddGetWString(self):
         fst = openfst.StdVectorFst()
-        fst.AddString(u"hello")
+        fst.AddWString(u"hello")
         fst.Write("temp.fst")
         assert u"hello"==openfst.WGetString(fst)
     def testFinal(self):

@@ -3,7 +3,7 @@ import openfst
 
 class narray(unittest.TestCase):
     def testRead(self):
-        fst = openfst.Read("ocr-dict-case.fst")
+        fst = openfst.Read("dict-1000words.fst")
         openfst.Verify(fst)
     def testAddString(self):
         fst = openfst.StdVectorFst()
