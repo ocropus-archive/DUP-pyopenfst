@@ -1,5 +1,7 @@
 // -*- mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
+%include "std_vector.i"
+
 /* Template for Arc classes. */
 template <class W> class ArcTpl {
 public:
@@ -51,17 +53,28 @@ template<class A> class MutableFst : public Fst<A> {
     virtual int NumArcs(int stateid) const = 0;
     %feature("docstring",
              "Add a new state to this FST.  Returns the ID of this new state.");
-    virtual int AddState() const = 0;
+    virtual int AddState()  = 0;
     %feature("docstring", "Set the start state.");
     virtual void SetStart(int stateid) = 0;
     %feature("docstring",
              "Add an outgoing arc from the given state.  Symbols and weight are\n"
              "given in the constructor for arc.");
-    virtual void AddArc(int stateid, const A & arc) const = 0;
-    // DeleteStates, DeleteArcs
+    virtual void AddArc(int stateid, const A & arc) = 0;
+    %feature("docstring",
+             "Delete a list of states from this FST.");
+    virtual void DeleteStates(const vector<int>&) = 0;
+    %feature("docstring",
+             "Delete all states from this FST.");
+    virtual void DeleteStates() = 0;
+    %feature("docstring",
+             "Delete the first n outgoing arcs from a state.");
+    virtual void DeleteArcs(int stateid, size_t n) = 0;
+    %feature("docstring",
+             "Delete all outgoing arcs from a state.");
+    virtual void DeleteArcs(int stateid) = 0;
     %feature("docstring",
              "Mark the given state as final, with the specified weight.");
-    virtual void SetFinal(int stateid, float weight) const = 0;
+    virtual void SetFinal(int stateid, float weight) = 0;
     %feature("docstring", "Returns the input symbol table.");
     virtual SymbolTable * InputSymbols() = 0;
     %feature("docstring", "Returns the output symbol table.");
@@ -111,6 +124,18 @@ public:
              "Add an outgoing arc from the given state.  Symbols and weight are\n"
              "given in the constructor to arc.");
     void AddArc(int stateid, const A & arc);
+    %feature("docstring",
+             "Delete a list of states from this FST.");
+    void DeleteStates(const vector<int>&);
+    %feature("docstring",
+             "Delete all states from this FST.");
+    void DeleteStates();
+    %feature("docstring",
+             "Delete the first n outgoing arcs from a state.");
+    void DeleteArcs(int stateid, size_t n);
+    %feature("docstring",
+             "Delete all outgoing arcs from a state.");
+    void DeleteArcs(int stateid);
     %feature("docstring",
              "Mark the given state as final, with the specified weight.");
     void SetFinal(int stateid, float weight);
@@ -293,6 +318,7 @@ public:
 
 /* Template for lazy composition FSTs. */
 template<class A> class ComposeFst : public Fst<A> {
+public:
     %feature("docstring",
              "Construct a lazy composition of FSTs A and B.");
     ComposeFst(Fst<A> const &fst1, Fst<A> const &fst2);
