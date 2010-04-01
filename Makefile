@@ -1,6 +1,3 @@
-INC=/usr/local/include
-PYINC=/usr/include/python2.5
-
 install:
 	python setup.py build
 	sudo python setup.py install
@@ -8,7 +5,7 @@ install:
 all: _openfst.so
 
 _openfst.so: openfst.i
-	swig -I$(INC) -python -c++ openfst.i 
+	swig -Wall -I$(INC) -python -c++ openfst.i 
 	g++ -g -fPIC -I$(INC) -I$(PYINC) -shared openfst_wrap.cxx -o _openfst.so -lfst
 
 lua: openfst.i
