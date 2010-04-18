@@ -186,7 +186,7 @@ public:
                  "Set a state as not being final.  Use this instead of the\n"
                  "SetFinal() method (SWIG won't allow you to pass inf to it).")
              SetNotFinal;
-        bool SetNotFinal(int state) {
+        void SetNotFinal(int state) {
             $self->SetFinal(state, A::Weight::Zero());
         }
         %feature("docstring",
