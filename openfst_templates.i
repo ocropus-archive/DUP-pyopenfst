@@ -183,6 +183,13 @@ public:
             return $self->Final(state).Value();
         }
         %feature("docstring",
+                 "Set a state as not being final.  Use this instead of the\n"
+                 "SetFinal() method (SWIG won't allow you to pass inf to it).")
+             SetNotFinal;
+        bool SetNotFinal(int state) {
+            $self->SetFinal(state, A::Weight::Zero());
+        }
+        %feature("docstring",
                  "Convenience method which adds an arc without the need to\n"
                  "explicitly create a StdArc object.")
              AddArc;
