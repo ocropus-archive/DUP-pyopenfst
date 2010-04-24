@@ -34,6 +34,16 @@ using namespace fst;
 %inline %{
 const int epsilon = 0;
 %}
+const int kNoLabel;
+
+/* Match types. */
+enum MatchType {
+    MATCH_INPUT,
+    MATCH_OUTPUT,
+    MATCH_BOTH,
+    MATCH_NONE,
+    MATCH_UNKNOWN
+};
 
 /* Templates for the class hierarchy. */
 %include "openfst_templates.i"
@@ -125,6 +135,24 @@ const int epsilon = 0;
          "Lazy composition of two FSTs.\n") LogComposeFst;
 %feature("notabstract") ComposeFst<LogArc>;
 %template(LogComposeFst) ComposeFst<LogArc>;
+
+%template(StdMatcher) Matcher<StdFst>;
+%template(LogMatcher) Matcher<LogFst>;
+
+%template(StdRhoMatcher) RhoMatcher<StdMatcher>;
+%template(LogRhoMatcher) RhoMatcher<LogMatcher>;
+%template(StdRhoComposeOptions) ComposeFstOptions<StdArc, StdRhoMatcher>;
+%template(LogRhoComposeOptions) ComposeFstOptions<StdArc, LogRhoMatcher>;
+
+%template(StdSigmaMatcher) SigmaMatcher<StdMatcher>;
+%template(LogSigmaMatcher) SigmaMatcher<LogMatcher>;
+%template(StdSigmaComposeOptions) ComposeFstOptions<StdArc, StdSigmaMatcher>;
+%template(LogSigmaComposeOptions) ComposeFstOptions<StdArc, LogSigmaMatcher>;
+
+%template(StdPhiMatcher) PhiMatcher<StdMatcher>;
+%template(LogPhiMatcher) PhiMatcher<LogMatcher>;
+%template(StdPhiComposeOptions) ComposeFstOptions<StdArc, StdPhiMatcher>;
+%template(LogPhiComposeOptions) ComposeFstOptions<StdArc, LogPhiMatcher>;
 
 /* Instantiate template functions. */
 %feature("docstring",

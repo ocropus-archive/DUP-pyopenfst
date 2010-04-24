@@ -87,6 +87,126 @@ class ConvertSyms(unittest.TestCase):
             pass
         else:
             self.Fail("expected failure for unknown symbol")
-        
+
+class Composition(unittest.TestCase):
+    def testCompose(self):
+        a = openfst.StdVectorFst()
+        a.AddState()
+        a.AddState()
+        a.AddArc(0, 1, 2, 0, 1)
+        a.AddArc(0, 2, 3, 0, 1)
+        a.AddArc(0, 3, 3, 1, 1)
+        a.SetStart(0)
+        a.SetFinal(1, 0)
+        b = openfst.StdVectorFst()
+        b.AddState()
+        b.AddState()
+        b.AddArc(0, 1, 2, 0, 1)
+        b.AddArc(0, 2, 3, 0, 1)
+        b.AddArc(0, 3, 3, 1, 1)
+        b.SetStart(0)
+        b.SetFinal(1, 0)
+        c = openfst.StdComposeFst(a, b)
+        for s in c:
+            for arc in c.iterarcs(s):
+                self.assertEquals(arc.nextstate, 1)
+                if arc.ilabel == 1:
+                    self.assertEquals(arc.olabel, 3)
+                if arc.ilabel == 2:
+                    self.assertEquals(arc.olabel, 3)
+                    self.assertEquals(arc.weight.Value(), 1)
+                if arc.ilabel == 3:
+                    self.assertEquals(arc.olabel, 3)
+                    self.assertEquals(arc.weight.Value(), 2)
+
+    def testComposeSigma(self):
+        a = openfst.StdVectorFst()
+        a.AddState()
+        a.AddState()
+        a.AddArc(0, 2, 2, 0, 1)
+        a.AddArc(0, 3, 3, 0, 1)
+        a.SetStart(0)
+        a.SetFinal(1, 0)
+        # Build an FST that matches everything adding weight 1
+        b = openfst.StdVectorFst()
+        b.AddState()
+        b.AddArc(0, 1, 1, 1, 0)
+        b.SetStart(0)
+        b.SetFinal(0, 0)
+        opts = openfst.StdSigmaComposeOptions()
+        opts.matcher2 = openfst.StdSigmaMatcher(b, openfst.MATCH_INPUT, 1)
+        # This is necessary for reasons I do not understand
+        opts.matcher1 = openfst.StdSigmaMatcher(a, openfst.MATCH_NONE)
+        c = openfst.StdComposeFst(a, b, opts)
+        for s in c:
+            for arc in c.iterarcs(s):
+                self.assertEquals(arc.nextstate, 1)
+                self.assertEquals(arc.weight.Value(), 1)
+                self.assertEquals(arc.ilabel, arc.olabel)
+
+    def testComposeRho(self):
+        a = openfst.StdVectorFst()
+        a.AddState()
+        a.AddState()
+        a.AddArc(0, 2, 2, 0, 1)
+        a.AddArc(0, 3, 3, 0, 1)
+        a.AddArc(0, 4, 4, 0, 1)
+        a.SetStart(0)
+        a.SetFinal(1, 0)
+        # Build an FST that matches 2 with no weight and everything
+        # else adding weight 1
+        b = openfst.StdVectorFst()
+        b.AddState()
+        b.AddArc(0, 1, 1, 1, 0)
+        b.AddArc(0, 2, 2, 0, 0)
+        b.SetStart(0)
+        b.SetFinal(0, 0)
+        opts = openfst.StdRhoComposeOptions()
+        opts.matcher2 = openfst.StdRhoMatcher(b, openfst.MATCH_INPUT, 1)
+        # This is necessary for reasons I do not understand
+        opts.matcher1 = openfst.StdRhoMatcher(a, openfst.MATCH_NONE)
+        c = openfst.StdComposeFst(a, b, opts)
+        for s in c:
+            for arc in c.iterarcs(s):
+                self.assertEquals(arc.nextstate, 1)
+                if arc.ilabel == 2:
+                    self.assertEquals(arc.weight.Value(), 0)
+                else:
+                    self.assertEquals(arc.weight.Value(), 1)
+
+    def testComposePhi(self):
+        a = openfst.StdVectorFst()
+        a.AddState()
+        a.AddState()
+        a.AddArc(0, 2, 2, 0, 1)
+        a.AddArc(0, 3, 3, 0, 1)
+        a.AddArc(0, 4, 4, 0, 1)
+        a.SetStart(0)
+        a.SetFinal(0, 0)
+        b = openfst.StdVectorFst()
+        b.AddState()
+        b.AddState()
+        b.AddArc(0, 1, 1, 1, 1)
+        b.AddArc(0, 2, 2, 0, 0)
+        b.AddArc(1, 3, 3, 0, 1)
+        b.AddArc(1, 4, 4, 0, 1)
+        b.SetStart(0)
+        b.SetFinal(0, 0)
+        b.SetFinal(1, 0)
+        opts = openfst.StdPhiComposeOptions()
+        opts.matcher2 = openfst.StdPhiMatcher(b, openfst.MATCH_INPUT, 1)
+        # This is necessary for reasons I do not understand
+        opts.matcher1 = openfst.StdPhiMatcher(a, openfst.MATCH_NONE)
+        c = openfst.StdComposeFst(a, b, opts)
+        for s in c:
+            for arc in c.iterarcs(s):
+                if arc.ilabel == 2:
+                    self.assertEquals(arc.weight.Value(), 0)
+                    self.assertEquals(arc.nextstate, 1)
+                elif arc.ilabel == 3 or arc.ilabel == 4:
+                    self.assertEquals(arc.weight.Value(), 1)
+                    self.assertEquals(arc.nextstate, 2)
+
+
 if __name__ == "__main__":
     unittest.main()

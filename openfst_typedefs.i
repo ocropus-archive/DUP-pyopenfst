@@ -39,6 +39,19 @@ typedef ArcIterator<LogFst> LogArcIterator;
 
 typedef MutableArcIterator<StdMutableFst> StdMutableArcIterator;
 typedef MutableArcIterator<LogMutableFst> LogMutableArcIterator;
+
+typedef Matcher<StdFst> StdMatcher;
+typedef Matcher<LogFst> LogMatcher;
+
+typedef SigmaMatcher<StdMatcher> StdSigmaMatcher;
+typedef SigmaMatcher<LogMatcher> LogSigmaMatcher;
+
+typedef RhoMatcher<StdMatcher> StdRhoMatcher;
+typedef RhoMatcher<LogMatcher> LogRhoMatcher;
+
+typedef PhiMatcher<StdMatcher> StdPhiMatcher;
+typedef PhiMatcher<LogMatcher> LogPhiMatcher;
+
 %}
 
 typedef Fst<StdArc> StdFst;
