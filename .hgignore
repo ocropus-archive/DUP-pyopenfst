@@ -1,5 +1,7 @@
-openfst.py
-openfst_wrap.cpp
-build
+.*\.pyc
 _test.fst
 temp.fst
+build
+openfst.py
+openfst_wrap.cpp
+.*~

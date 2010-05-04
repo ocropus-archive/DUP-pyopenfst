@@ -48,7 +48,5 @@ class narray(unittest.TestCase):
         shortest.Write("temp.fst")
         assert "AABA"==openfst.GetString(shortest)
 
-
-suite = unittest.makeSuite(narray,'test')
-runner = unittest.TextTestRunner()
-runner.run(suite)
+if __name__ == "__main__":
+    unittest.main()

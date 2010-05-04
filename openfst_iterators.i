@@ -94,7 +94,7 @@ def iterarcs(self, stateid):
 
 def mutable_iterarcs(self, stateid):
     """Return a mutable iterator over outgoing arcs from stateid."""
-    return Fst_arc_iter(StdMutableArcIterator(self, stateid))
+    return Fst_mutable_arc_iter(StdMutableArcIterator(self, stateid))
 %}
 }
 %extend MutableFst<LogArc> {
@@ -109,7 +109,7 @@ def iterarcs(self, stateid):
 
 def mutable_iterarcs(self, stateid):
     """Return a mutable iterator over outgoing arcs from stateid."""
-    return Fst_arc_iter(LogMutableArcIterator(self, stateid))
+    return Fst_mutable_arc_iter(LogMutableArcIterator(self, stateid))
 %}
 }
 %extend VectorFst<LogArc> {
@@ -124,7 +124,7 @@ def iterarcs(self, stateid):
 
 def mutable_iterarcs(self, stateid):
     """Return a mutable iterator over outgoing arcs from stateid."""
-    return Fst_arc_iter(LogMutableArcIterator(self, stateid))
+    return Fst_mutable_arc_iter(LogMutableArcIterator(self, stateid))
 %}
 }
 %extend VectorFst<StdArc> {
@@ -139,6 +139,6 @@ def iterarcs(self, stateid):
 
 def mutable_iterarcs(self, stateid):
     """Return a mutable iterator over outgoing arcs from stateid."""
-    return Fst_arc_iter(StdMutableArcIterator(self, stateid))
+    return Fst_mutable_arc_iter(StdMutableArcIterator(self, stateid))
 %}
 }

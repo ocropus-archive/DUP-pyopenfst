@@ -183,6 +183,13 @@ public:
             return $self->Final(state).Value();
         }
         %feature("docstring",
+                 "Set a state as not being final.  Use this instead of the\n"
+                 "SetFinal() method (SWIG won't allow you to pass inf to it).")
+             SetNotFinal;
+        void SetNotFinal(int state) {
+            $self->SetFinal(state, A::Weight::Zero());
+        }
+        %feature("docstring",
                  "Convenience method which adds an arc without the need to\n"
                  "explicitly create a StdArc object.")
              AddArc;
@@ -316,12 +323,62 @@ public:
     }
 };
 
+/* Matchers. */
+template<class F> class Matcher {
+public:
+    typedef F FST;
+    Matcher(FST const &fst, MatchType match_type);
+};
+
+template<class M> class RhoMatcher {
+public:
+    typedef typename M::FST FST;
+    RhoMatcher(FST const &fst, MatchType match_type,
+               int rho_label=kNoLabel, bool rewrite_both=false);
+};
+
+template<class M> class SigmaMatcher {
+public:
+    typedef typename M::FST FST;
+    SigmaMatcher(FST const &fst, MatchType match_type,
+                 int sigma_label=kNoLabel, bool rewrite_both=false);
+};
+
+template<class M> class PhiMatcher {
+public:
+    typedef typename M::FST FST;
+    PhiMatcher(FST const &fst, MatchType match_type,
+               int phi_label=kNoLabel, bool phi_loop=true,
+               bool rewrite_both=false);
+};
+
+/* Compose options. */
+template<class A, class M> class ComposeFstOptions {
+public:
+    %feature("docstring", "Enable garbage collection");
+    bool gc;
+    %feature("docstring", "Number of bytes allowed before garbage collection");
+    size_t gc_limit;
+    %feature("docstring", "Matcher for first input FST");
+    M *matcher1;
+    %feature("docstring", "Matcher for second input FST");
+    M *matcher2;
+};
+
 /* Template for lazy composition FSTs. */
 template<class A> class ComposeFst : public Fst<A> {
 public:
     %feature("docstring",
              "Construct a lazy composition of FSTs A and B.");
     ComposeFst(Fst<A> const &fst1, Fst<A> const &fst2);
+    /* Seems like we have to explicity instantiate these somewhere,
+     * might as well be here. */
+    ComposeFst(Fst<A> const &fst1, Fst<A> const &fst2,
+               ComposeFstOptions<A,SigmaMatcher<Matcher<Fst<A> > > > const &opts);
+    ComposeFst(Fst<A> const &fst1, Fst<A> const &fst2,
+               ComposeFstOptions<A,RhoMatcher<Matcher<Fst<A> > > > const &opts);
+    ComposeFst(Fst<A> const &fst1, Fst<A> const &fst2,
+               ComposeFstOptions<A,PhiMatcher<Matcher<Fst<A> > > > const &opts);
     %feature("docstring",
              "Get the start state ID of this FST.");
     int Start();

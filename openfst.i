@@ -34,6 +34,16 @@ using namespace fst;
 %inline %{
 const int epsilon = 0;
 %}
+const int kNoLabel;
+
+/* Match types. */
+enum MatchType {
+    MATCH_INPUT,
+    MATCH_OUTPUT,
+    MATCH_BOTH,
+    MATCH_NONE,
+    MATCH_UNKNOWN
+};
 
 /* Templates for the class hierarchy. */
 %include "openfst_templates.i"
@@ -126,6 +136,24 @@ const int epsilon = 0;
 %feature("notabstract") ComposeFst<LogArc>;
 %template(LogComposeFst) ComposeFst<LogArc>;
 
+%template(StdMatcher) Matcher<StdFst>;
+%template(LogMatcher) Matcher<LogFst>;
+
+%template(StdRhoMatcher) RhoMatcher<StdMatcher>;
+%template(LogRhoMatcher) RhoMatcher<LogMatcher>;
+%template(StdRhoComposeOptions) ComposeFstOptions<StdArc, StdRhoMatcher>;
+%template(LogRhoComposeOptions) ComposeFstOptions<StdArc, LogRhoMatcher>;
+
+%template(StdSigmaMatcher) SigmaMatcher<StdMatcher>;
+%template(LogSigmaMatcher) SigmaMatcher<LogMatcher>;
+%template(StdSigmaComposeOptions) ComposeFstOptions<StdArc, StdSigmaMatcher>;
+%template(LogSigmaComposeOptions) ComposeFstOptions<StdArc, LogSigmaMatcher>;
+
+%template(StdPhiMatcher) PhiMatcher<StdMatcher>;
+%template(LogPhiMatcher) PhiMatcher<LogMatcher>;
+%template(StdPhiComposeOptions) ComposeFstOptions<StdArc, StdPhiMatcher>;
+%template(LogPhiComposeOptions) ComposeFstOptions<StdArc, LogPhiMatcher>;
+
 /* Instantiate template functions. */
 %feature("docstring",
          "Compose two FSTs placing the result in a newly initialized FST.") Compose;
@@ -202,50 +230,30 @@ void Union(LogMutableFst *out,LogFst const &fst);
 void Verify(StdFst const &fst);
 void Verify(LogFst const &fst);
 
-/* A whole bunch of custom functions for OCRopus (I think) */
-/* SWIG gets upset if these are inside an %inline block. */
-%feature("docstring",
-         "Get string starting at given state.") GetString;
-%feature("docstring",
-         "Get wide character string starting at given state.") WGetString;
+/* A whole bunch of custom and convenience functions. */
 %feature("docstring",
          "Convenience function to read a StdVectorFst from a file.") Read;
-%feature("docstring",
-         "Sort the arcs of an FST on the output labels.") ArcSortOutput;
-%feature("docstring",
-         "Sort the arcs of an FST on the input labels.") ArcSortInput;
-%feature("docstring",
-         "Project an FST to an FSA using the input labels.") ProjectInput;
-%feature("docstring",
-         "Project an FST to an FSA using the output labels.") ProjectOutput;
-%feature("docstring",
-         "Perform Kleene star closure on an FST.") ClosureStar;
-%feature("docstring",
-         "Perform plus-closure on an FST.") ClosurePlus;
-%feature("docstring",
-         "Concatenate fst2 onto fst.") ConcatOnto;
-%feature("docstring",
-         "Concatenate fst onto fst2.") ConcatOntoOther;
-%feature("docstring",
-         "Epsilon normalize an FST on the input side.") EpsNormInput;
-%feature("docstring",
-         "Epsilon normalize an FST on the output side.") EpsNormOutput;
 %inline %{
-    char *GetString(StdMutableFst *fst,int which=0) {
+    StdVectorFst *Read(const char *s) {
+        return StdVectorFst::Read(s);
+    }
+
+    template<class A>
+    char *GetString(MutableFst<A> *fst,int which=0) {
         char result[100000];
-        int index = 0;
-        int state = fst->Start();
+        size_t index = 0;
+        typename A::StateId state = fst->Start();
         if(state<0) return 0;
         for(;;) {
-            if(fst->Final(state)!=Weight::Zero()) break;
-            ArcIterator<StdMutableFst> iter(*fst,state);
+            if (fst->Final(state) != A::Weight::Zero()) break;
+            ArcIterator< MutableFst<A> > iter(*fst,state);
             iter.Seek(which);
-            StdArc arc(iter.Value());
+            A arc(iter.Value());
             if (arc.olabel != 0)
                 result[index++] = arc.olabel;
-            if(index>=-1+sizeof result/sizeof result[0])
+            if (index >= (sizeof(result)/sizeof(result[0])) - 1)
                 throw "string too long";
-            int nstate = arc.nextstate;
+            typename A::StateId nstate = arc.nextstate;
             if(nstate==state)
                 throw "malformed string fst (state==nstate)";
             if(state<0)
@@ -256,21 +264,23 @@ void Verify(LogFst const &fst);
         result[index++] = 0;
         return strdup(result);
     }
-    wchar_t *WGetString(StdMutableFst *fst,int which=0) {
+
+    template<class A>
+    wchar_t *WGetString(MutableFst<A> *fst,int which=0) {
         wchar_t result[100000];
-        int index = 0;
-        int state = fst->Start();
+        size_t index = 0;
+        typename A::StateId state = fst->Start();
         if(state<0) return 0;
         for(;;) {
-            if(fst->Final(state)!=Weight::Zero()) break;
-            ArcIterator<StdMutableFst> iter(*fst,state);
+            if(fst->Final(state) != A::Weight::Zero()) break;
+            ArcIterator< MutableFst<A> > iter(*fst,state);
             iter.Seek(which);
-            StdArc arc(iter.Value());
+            A arc(iter.Value());
             if (arc.olabel != 0)
                 result[index++] = arc.olabel;
-            if(index>=-1+sizeof result/sizeof result[0])
+            if (index >= (sizeof(result)/sizeof(result[0])) - 1)
                 throw "string too long";
-            int nstate = arc.nextstate;
+            typename A::StateId nstate = arc.nextstate;
             if(nstate==state)
                 throw "malformed string fst (state==nstate)";
             if(state<0)
@@ -283,40 +293,166 @@ void Verify(LogFst const &fst);
         memcpy(p,result,index*sizeof *result);
         return p;
     }
-    StdVectorFst *Read(const char *s) {
-        return StdVectorFst::Read(s);
+
+    template<class A>
+    void ArcSortOutput(MutableFst<A> *fst) {
+        ArcSort(fst,OLabelCompare<A>());
     }
-    void ArcSortOutput(StdMutableFst *fst) {
-        ArcSort(fst,StdOLabelCompare());
+
+    template<class A>
+    void ArcSortInput(MutableFst<A> *fst) {
+        ArcSort(fst,ILabelCompare<A>());
     }
-    void ArcSortInput(StdMutableFst *fst) {
-        ArcSort(fst,StdILabelCompare());
-    }
-    void ProjectInput(StdMutableFst *result) {
+
+    template<class A>
+    void ProjectInput(MutableFst<A> *result) {
         Project(result,PROJECT_INPUT);
     }
-    void ProjectOutput(StdMutableFst *result) {
+
+    template<class A>
+    void ProjectOutput(MutableFst<A> *result) {
         Project(result,PROJECT_OUTPUT);
     }
-    void ClosureStar(StdMutableFst *fst) {
+
+    template<class A>
+    void ClosureStar(MutableFst<A> *fst) {
         Closure(fst,CLOSURE_STAR);
     }
-    void ClosurePlus(StdMutableFst *fst) {
+
+    template<class A>
+    void ClosurePlus(MutableFst<A> *fst) {
         Closure(fst,CLOSURE_PLUS);
     }
-    void ConcatOnto(StdMutableFst *fst,StdFst const &fst2) {
+
+    template<class A>
+    void ConcatOnto(MutableFst<A> *fst,Fst<A> const &fst2) {
         Concat(fst,fst2);
     }
-    void ConcatOntoOther(StdFst const &fst,StdMutableFst *fst2) {
+    
+    template<class A>
+    void ConcatOntoOther(Fst<A> const &fst,MutableFst<A> *fst2) {
         Concat(fst,fst2);
     }
-    void EpsNormInput(StdFst const &fst,StdMutableFst *out) {
+
+    template<class A>
+        void EpsNormInput(Fst<A> const &fst,MutableFst<A> *out) {
         EpsNormalize(fst,out,EPS_NORM_INPUT);
     }
-    void EpsNormOutput(StdFst const &fst,StdMutableFst *out) {
+
+    template<class A>
+        void EpsNormOutput(Fst<A> const &fst,MutableFst<A> *out) {
         EpsNormalize(fst,out,EPS_NORM_OUTPUT);
     }
+
+    template<class A>
+        void ConvertSymbols(VectorFst<A> *fst, SymbolTable const &symtab,
+                           bool input=true, bool output=true) {
+        SymbolTable const *pisym = fst->InputSymbols();
+        SymbolTable const *posym = fst->OutputSymbols();
+        typename A::StateId s;
+
+        for (s = 0; s < fst->NumStates(); ++s) {
+            MutableArcIterator< VectorFst<A> > itor(fst, s);
+            while (!itor.Done()) {
+                A arc = itor.Value();
+                if (input) {
+                    string isym = pisym->Find(arc.ilabel);
+                    arc.ilabel = symtab.Find(isym);
+                    if (arc.ilabel == -1)
+                        throw "Unknown word in input symbols";
+                }
+                if (output) {
+                    string osym = posym->Find(arc.olabel);
+                    arc.olabel = symtab.Find(osym);
+                    if (arc.olabel == -1)
+                        throw "Unknown word in output symbols";
+                }
+                itor.SetValue(arc);
+                itor.Next();
+            }
+        }
+        if (input)
+            fst->SetInputSymbols(&symtab);
+        if (output)
+            fst->SetOutputSymbols(&symtab);
+    }
 %}
+
+%feature("docstring",
+         "Get string starting at given state.") GetString;
+char *GetString(StdMutableFst *fst,int which=0);
+char *GetString(LogMutableFst *fst,int which=0);
+
+%feature("docstring",
+         "Get wide character string starting at given state.") WGetString;
+wchar_t *WGetString(StdMutableFst *fst,int which=0);
+wchar_t *WGetString(StdMutableFst *fst,int which=0);
+
+%feature("docstring",
+         "Sort the arcs of an FST on the output labels.") ArcSortOutput;
+void ArcSortOutput(StdMutableFst *fst);
+void ArcSortOutput(LogMutableFst *fst);
+
+%feature("docstring",
+         "Sort the arcs of an FST on the input labels.") ArcSortInput;
+void ArcSortInput(StdMutableFst *fst);
+void ArcSortInput(LogMutableFst *fst);
+
+%feature("docstring",
+         "Project an FST to an FSA using the input labels.") ProjectInput;
+void ProjectInput(StdMutableFst *result);
+void ProjectInput(LogMutableFst *result);
+
+%feature("docstring",
+         "Project an FST to an FSA using the output labels.") ProjectOutput;
+void ProjectOutput(StdMutableFst *result);
+void ProjectOutput(LogMutableFst *result);
+
+%feature("docstring",
+         "Perform Kleene star closure on an FST.") ClosureStar;
+void ClosureStar(StdMutableFst *fst);
+void ClosureStar(LogMutableFst *fst);
+
+%feature("docstring",
+         "Perform plus-closure on an FST.") ClosurePlus;
+void ClosurePlus(StdMutableFst *fst);
+void ClosurePlus(LogMutableFst *fst);
+
+%feature("docstring",
+         "Concatenate fst2 onto fst.") ConcatOnto;
+void ConcatOnto(StdMutableFst *fst,StdFst const &fst2);
+void ConcatOnto(LogMutableFst *fst,LogFst const &fst2);
+
+%feature("docstring",
+         "Concatenate fst onto fst2.") ConcatOntoOther;
+void ConcatOntoOther(StdFst const &fst,StdMutableFst *fst2);
+void ConcatOntoOther(LogFst const &fst,LogMutableFst *fst2);
+
+%feature("docstring",
+         "Epsilon normalize an FST on the input side.") EpsNormInput;
+void EpsNormInput(StdFst const &fst, StdMutableFst *out);
+void EpsNormInput(LogFst const &fst, LogMutableFst *out);
+
+%feature("docstring",
+         "Epsilon normalize an FST on the output side.") EpsNormOutput;
+void EpsNormOutput(StdFst const &fst, StdMutableFst *out);
+void EpsNormOutput(LogFst const &fst, LogMutableFst *out);
+
+%feature("docstring",
+         "Switch output and/or input symbol table and renumber arcs to match.\n\n"
+         "Throws an exception if no mapping can be found for a symbol in C{fst}.\n"
+         "@param fst: FST to modify.\n"
+         "@type symtab: openfst.MutableFst\n"
+         "@param symtab: New symbol table to use.\n"
+         "@type symtab: openfst.SymbolTable\n"
+         "@param input: Convert input symbols.\n"
+         "@type input: bool\n"
+         "@param output: Convert output symbols.\n"
+         "@type output: bool\n") ConvertSymbols;
+void ConvertSymbols(StdVectorFst *fst, SymbolTable const &symtab,
+                   bool input, bool output);
+void ConvertSymbols(LogVectorFst *fst, SymbolTable const &symtab,
+                   bool input, bool output);
 
 %newobject Copy;
 %feature("docstring", "Copy an FST.") Copy;

@@ -23,6 +23,5 @@ class narray(unittest.TestCase):
         assert fst.IsFinal(s[3])
         assert abs(fst.FinalWeight(s[3])-73.0)<1e-10
 
-suite = unittest.makeSuite(narray,'test')
-runner = unittest.TextTestRunner()
-runner.run(suite)
+if __name__ == "__main__":
+    unittest.main()
