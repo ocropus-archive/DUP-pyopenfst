@@ -33,6 +33,8 @@ template<class A> class Fst {
     virtual int NumStates() const = 0;
     %feature("docstring", "Returns the number of arcs leaving the given state.");
     virtual int NumArcs(int stateid) const = 0;
+    %feature("docstring", "Returns the properties for this FST.");
+    virtual uint64 Properties(uint64 mask, bool test) const = 0;
 public:
     typedef A Arc;
 };
@@ -161,6 +163,8 @@ public:
              "to a file, or any changes you may have made to the given symbol table\n"
              "will not be reflected in the output file.");
     void SetOutputSymbols(SymbolTable const * symtab);
+    %feature("docstring", "Returns the properties for this FST.");
+    uint64 Properties(uint64 mask, bool test) const;
 
     %feature("docstring", "Read an FST from a binary file.");
     static StdVectorFst* Read(std::string const & filename);

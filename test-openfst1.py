@@ -11,6 +11,9 @@ class Creation(unittest.TestCase):
         nst = fst.AddState()
         fst.AddArc(st, 42, 69, 55, nst);
         self.assertEquals(fst.NumArcs(st), 1)
+        self.assertEquals(fst.Properties(openfst.kFstProperties, True)
+                          & openfst.kNotAcceptor,
+                          openfst.kNotAcceptor)
 
     def testCreateLog(self):
         fst = openfst.LogVectorFst()

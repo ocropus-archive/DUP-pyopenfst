@@ -15,7 +15,7 @@
 using namespace fst;
 %}
 
-/* C++ exception handling */
+/* C++ exception handling (FIXME: this doesn't really seem to work right)  */
 %exception {
     try {
         $action
@@ -45,6 +45,8 @@ enum MatchType {
     MATCH_UNKNOWN
 };
 
+/* FST properties. */
+%include "openfst_properties.i"
 /* Templates for the class hierarchy. */
 %include "openfst_templates.i"
 /* Human-friendly typedefs for all the various templated classes. */
