@@ -4,7 +4,7 @@
 setup.py file for SWIG example
 """
 
-from setuptools import setup, Extension
+from distutils.core import setup, Extension
 
 openfst = Extension('_openfst',
         libraries = ['fst'],
