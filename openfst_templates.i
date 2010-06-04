@@ -393,6 +393,26 @@ public:
     typename A::Weight Final(int stateid);
     %feature("docstring", "Returns the number of arcs leaving the given state.");
     int NumArcs(int stateid);
+
+    %feature("docstring", "Returns the input symbol table.");
+    SymbolTable * InputSymbols();
+    %feature("docstring", "Returns the output symbol table.");
+    SymbolTable * OutputSymbols();
+
+    %feature("docstring","Convenience function to test if a state is final.\n"
+             "Use this instead of the Final() method\n") IsFinal;
+    %extend {
+        bool IsFinal(int state) {
+            return $self->Final(state)!=A::Weight::Zero();
+        }
+        %feature("docstring",
+                 "Get the final weight for the given state.  Use this instead of\n"
+                 "the Final() method.")
+             FinalWeight;
+        float FinalWeight(int state) {
+            return $self->Final(state).Value();
+        }
+    }
 };
 
 /* Template for state iterators. */
