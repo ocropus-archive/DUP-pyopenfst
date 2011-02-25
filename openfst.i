@@ -12,6 +12,7 @@
 #include <fst/fstlib.h>
 #include <fst/symbol-table.h>
 #include <fst/arcsort.h>
+#include <fst/encode.h>
 using namespace fst;
 %}
 
@@ -166,8 +167,6 @@ void Compose(LogFst const &fst1, LogFst const &fst2, LogMutableFst *result);
 void Connect(StdMutableFst *fst);
 void Connect(LogMutableFst *fst);
 
-// Decode
-// Encode
 %feature("docstring",
          "Determinize an FST, placing the result in a newly initialize FST.") Determinize;
 void Determinize(StdFst const &in, StdMutableFst *out);
@@ -330,7 +329,7 @@ void Verify(LogFst const &fst);
     void ConcatOnto(MutableFst<A> *fst,Fst<A> const &fst2) {
         Concat(fst,fst2);
     }
-    
+
     template<class A>
     void ConcatOntoOther(Fst<A> const &fst,MutableFst<A> *fst2) {
         Concat(fst,fst2);
@@ -472,3 +471,28 @@ void ConvertSymbols(LogVectorFst *fst, SymbolTable const &symtab,
         return result;
     }
 %}
+
+/* Encoding and decoding. */
+
+enum EncodeType { ENCODE, DECODE };
+static const uint32 kEncodeLabels      = 0x00001;
+static const uint32 kEncodeWeights     = 0x00002;
+static const uint32 kEncodeFlags       = 0x00003;  // All non-internal flags
+
+template<class A> class EncodeMapper {
+public:
+    EncodeMapper(uint32 flags,EncodeType type);
+};
+%inline %{
+typedef EncodeMapper<StdArc> StdEncodeMapper;
+%}
+
+%template(StdEncodeMapper) EncodeMapper<StdArc>;
+
+%feature("docstring",
+         "Encode the arcs of an FST.") Encode;
+void Encode(StdMutableFst *fst,StdEncodeMapper *mapper);
+%feature("docstring",
+         "Decode the arcs of an FST.") Decode;
+void Decode(StdMutableFst *fst,const EncodeMapper<StdArc> &mapper);
+
