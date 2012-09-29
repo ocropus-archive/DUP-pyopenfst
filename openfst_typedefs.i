@@ -1,6 +1,8 @@
 // -*- mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
 %inline %{
+#include <fst/matcher.h>
+
 typedef TropicalWeight Weight;
 
 /* Since some types are already defined in OpenFST, we just have to

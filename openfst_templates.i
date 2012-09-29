@@ -197,8 +197,8 @@ public:
                  "Convenience method which adds an arc without the need to\n"
                  "explicitly create a StdArc object.")
              AddArc;
-        void AddArc(int from,int ilabel,int olabel,float weight,int to) {
-            $self->AddArc(from,A(ilabel,olabel,weight,to));
+        void AddArc(int frm,int ilabel,int olabel,float weight,int to) {
+            $self->AddArc(frm,A(ilabel,olabel,weight,to));
         }
         %feature("docstring",
                  "Convenience method which returns the jth arc exiting state i.")
@@ -281,16 +281,16 @@ public:
         }
         %feature("docstring", "Add nodes and arcs to transduce one string into another.")
              AddTranslation;
-        void AddTranslation(const char *in,const char *out,float icost=0.0,float fcost=0.0,float ccost=0.0) {
+        void AddTranslation(const char *inp,const char *out,float icost=0.0,float fcost=0.0,float ccost=0.0) {
             int state = $self->Start();
             if(state<0) {
                 state = $self->AddState();
                 $self->SetStart(state);
             }
-            for(int i=0;in[i];i++) {
+            for(int i=0;inp[i];i++) {
                 int nstate = $self->AddState();
                 float xcost = ccost + (i==0?icost:0);
-                $self->AddArc(state,A(in[i],epsilon,xcost,nstate));
+                $self->AddArc(state,A(inp[i],epsilon,xcost,nstate));
                 state = nstate;
             }
             for(int i=0;out[i];i++) {
@@ -303,7 +303,7 @@ public:
         %feature("docstring",
                  "Add nodes and arcs to transduce one wide character string into another.")
              AddWTranslation;
-        void AddWTranslation(const wchar_t *in,const wchar_t *out,float icost=0.0,float fcost=0.0,float ccost=0.0) {
+        void AddWTranslation(const wchar_t *inp,const wchar_t *out,float icost=0.0,float fcost=0.0,float ccost=0.0) {
             int state = $self->Start();
             if(state<0) {
                 state = $self->AddState();
@@ -311,10 +311,10 @@ public:
             }
             const int OEPS = 0;
             const int IEPS = 0;
-            for(int i=0;in[i];i++) {
+            for(int i=0;inp[i];i++) {
                 int nstate = $self->AddState();
                 float xcost = ccost + (i==0?icost:0);
-                $self->AddArc(state,A(in[i],OEPS,xcost,nstate));
+                $self->AddArc(state,A(inp[i],OEPS,xcost,nstate));
                 state = nstate;
             }
             for(int i=0;out[i];i++) {
@@ -334,18 +334,28 @@ public:
     Matcher(FST const &fst, MatchType match_type);
 };
 
+enum MatcherRewriteMode {
+  MATCHER_REWRITE_AUTO = 0,    // Rewrites both sides iff acceptor.
+  MATCHER_REWRITE_ALWAYS,
+  MATCHER_REWRITE_NEVER
+};
+
 template<class M> class RhoMatcher {
 public:
     typedef typename M::FST FST;
     RhoMatcher(FST const &fst, MatchType match_type,
-               int rho_label=kNoLabel, bool rewrite_both=false);
+               int rho_label=kNoLabel,
+               MatcherRewriteMode rewrite_mode = MATCHER_REWRITE_AUTO,
+               M *Matcher=0);
 };
 
 template<class M> class SigmaMatcher {
 public:
     typedef typename M::FST FST;
     SigmaMatcher(FST const &fst, MatchType match_type,
-                 int sigma_label=kNoLabel, bool rewrite_both=false);
+                 int sigma_label=kNoLabel,
+                 MatcherRewriteMode rewrite_mode = MATCHER_REWRITE_AUTO,
+                 M *Matcher=0);
 };
 
 template<class M> class PhiMatcher {
@@ -353,7 +363,8 @@ public:
     typedef typename M::FST FST;
     PhiMatcher(FST const &fst, MatchType match_type,
                int phi_label=kNoLabel, bool phi_loop=true,
-               bool rewrite_both=false);
+               MatcherRewriteMode rewrite_mode = MATCHER_REWRITE_AUTO,
+               M *Matcher=0);
 };
 
 /* Compose options. */

@@ -56,7 +56,7 @@ struct SymbolTable {
 struct SymbolTableIterator {
     SymbolTableIterator(SymbolTable const & symtab);
     bool Done(void);
-    const char * Symbol(void);
+    string Symbol(void);
     long long Value(void);
     void Next(void);
     void Reset(void);

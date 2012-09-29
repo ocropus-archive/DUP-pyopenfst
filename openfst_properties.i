@@ -65,16 +65,16 @@ uint64 ComposeProperties(uint64 inprops1, uint64 inprops2);
 uint64 ConcatProperties(uint64 inprops1, uint64 inprops2,
                         bool delayed = false);
 uint64 DeterminizeProperties(uint64 inprops, bool has_subsequential_label);
-uint64 DifferenceProperties(uint64 inprops1, uint64 inprops2);
+//uint64 DifferenceProperties(uint64 inprops1, uint64 inprops2);
 uint64 FactorWeightProperties(uint64 inprops);
-uint64 IntersectProperties(uint64 inprops1, uint64 inprops2);
+//uint64 IntersectProperties(uint64 inprops1, uint64 inprops2);
 uint64 InvertProperties(uint64 inprops);
 uint64 ProjectProperties(uint64 inprops, bool project_input);
 uint64 RelabelProperties(uint64 inprops);
-uint64 ReplaceProperties(const vector<uint64>& inprops,
-                         ssize_t root,
-                         bool epsilon_on_replace,
-                         bool no_empty_fst);
+// uint64 ReplaceProperties(const vector<uint64>& inprops,
+//                          ssize_t root,
+//                          bool epsilon_on_replace,
+//                          bool no_empty_fst);
 uint64 ReverseProperties(uint64 inprops);
 uint64 ReweightProperties(uint64 inprops);
 uint64 RmEpsilonProperties(uint64 inprops, bool delayed = false);
@@ -84,9 +84,9 @@ uint64 UnionProperties(uint64 inprops1, uint64 inprops2, bool delayed = false);
 %inline %{
 const char *PropertyBitName(int bit)
 {
-	if (bit > 63)
-		return NULL;
-	else
-		return PropertyNames[bit];
+        if (bit > 63)
+                return NULL;
+        else
+                return PropertyNames[bit];
 }
 %}

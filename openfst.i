@@ -6,6 +6,14 @@
 %include "cstring.i"
 %include "std_string.i"
 %include "std_wstring.i"
+%include "stl.i"
+%include "std_vector.i"
+
+namespace std {
+%template(vector_int) vector<int>;
+%template(vector_float) vector<float>;
+%template(vector_double) vector<double>;
+};
 
 /* C++ header files for everything. */
 %{
@@ -13,6 +21,7 @@
 #include <fst/symbol-table.h>
 #include <fst/arcsort.h>
 #include <fst/encode.h>
+#include <fst/matcher.h>
 using namespace fst;
 %}
 
@@ -169,8 +178,8 @@ void Connect(LogMutableFst *fst);
 
 %feature("docstring",
          "Determinize an FST, placing the result in a newly initialize FST.") Determinize;
-void Determinize(StdFst const &in, StdMutableFst *out);
-void Determinize(LogFst const &in, LogMutableFst *out);
+void Determinize(StdFst const &inp, StdMutableFst *out);
+void Determinize(LogFst const &inp, LogMutableFst *out);
 %feature("docstring",
          "Take the difference between two FSTs, placing the result in a\n"
          "newly initialized FST.") Difference;
@@ -211,7 +220,18 @@ void Reverse(LogFst const &fst,LogMutableFst *out);
          "Remove epsilon transitions from an FST.") RmEpsilon;
 void RmEpsilon(StdMutableFst *out);
 void RmEpsilon(LogMutableFst *out);
-// ShortestDistance
+%feature("docstring",
+         "Find the (+) sum of all the paths from p to q.")
+ShortestDistance;
+
+namespace std {
+%template(vector_weight) vector<Weight>;
+%template(vector_logweight) vector<LogWeight>;
+};
+
+const float kDelta =                   1.0F/1024.0F;
+void ShortestDistance(StdFst const &fst, std::vector<Weight> *distance,bool reverse=false, float delta=kDelta);
+void ShortestDistance(LogFst const &fst, std::vector<LogWeight> *distance,bool reverse=false, float delta=kDelta);
 %feature("docstring",
          "Find N shortest paths in an FST placing results in a newly initialized FST.")
 ShortestPath;
