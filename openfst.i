@@ -68,197 +68,21 @@ enum MatchType {
 /* Pythonic iterators. */
 %include "openfst_iterators.i"
 
-/* Instantiate arc classes. */
-%feature("docstring",
-         "Standard arc class, using floating-point weights in the tropical semiring.") StdArc;
-%template(StdArc) ArcTpl<Weight>;
-%feature("docstring",
-         "Standard arc class, using floating-point weights in the log semiring.") LogArc;
-%template(LogArc) ArcTpl<LogWeight>;
+/* Encoding and decoding. */
 
-/* Instantiate Fst abstract base classes. */
-%template(StdFst) Fst<StdArc>;
-%template(LogFst) Fst<LogArc>;
-%template(StdMutableFst) MutableFst<StdArc>;
-%template(LogMutableFst) MutableFst<LogArc>;
+enum EncodeType { ENCODE, DECODE };
+static const uint32 kEncodeLabels      = 0x00001;
+static const uint32 kEncodeWeights     = 0x00002;
+static const uint32 kEncodeFlags       = 0x00003;  // All non-internal flags
 
-/* Instantiate VectorFst implementation classes. */
-%feature("docstring",
-         "Standard FST class, using floating-point weights in the tropical semiring\n"
-         "and an underlying implementation based on C++ vectors.") StdVectorFst;
-%feature("notabstract") VectorFst<StdArc>;
-%template(StdVectorFst) VectorFst<StdArc>;
-%feature("docstring",
-         "Standard FST class, using floating-point weights in the log semiring\n"
-         "and an underlying implementation based on C++ vectors.") LogVectorFst;
-%feature("notabstract") VectorFst<LogArc>;
-%template(LogVectorFst) VectorFst<LogArc>;
-
-/* Instantiate state iterators. */
-%feature("docstring",
-         "Underlying iterator class over states.  Use Python iterator\n"
-         "syntax instead, e.g.:\n\n"
-         "for state in fst:\n"
-         "    ...\n") StdStateIterator;
-%template(StdStateIterator) StateIterator<StdFst>;
-%feature("docstring",
-         "Underlying iterator class over states.  Use Python iterator\n"
-         "syntax instead, e.g.:\n\n"
-         "for state in fst:\n"
-         "    ...\n") LogStateIterator;
-%template(LogStateIterator) StateIterator<LogFst>;
-
-/* Instantiate arc iterators. */
-%feature("docstring",
-         "Underlying iterator class over arcs.  Use Python iterator\n"
-         "syntax instead, e.g.:\n\n"
-         "for state in fst:\n"
-         "    for arc in fst.iterarcs(state):\n") StdArcIterator;
-%template(StdArcIterator) ArcIterator<StdFst>;
-%feature("docstring",
-         "Underlying iterator class over arcs.  Use Python iterator\n"
-         "syntax instead, e.g.:\n\n"
-         "for state in fst:\n"
-         "    for arc in fst.iterarcs(state):\n") LogArcIterator;
-%template(LogArcIterator) ArcIterator<LogFst>;
-%feature("docstring",
-         "Underlying iterator class over arcs which allows changes to be\n"
-         "made.  Use Python iterator\n"
-         "syntax instead, e.g.:\n\n"
-         "for state in fst:\n"
-         "    for arciter in fst.mutable_iterarcs(state):\n"
-         "        arc = arciter.Value()\n") StdMutableArcIterator;
-%template(StdMutableArcIterator) MutableArcIterator<StdMutableFst>;
-%feature("docstring",
-         "Underlying iterator class over arcs which allows changes to be\n"
-         "made.  Use Python iterator\n"
-         "syntax instead, e.g.:\n\n"
-         "for state in fst:\n"
-         "    for arciter in fst.mutable_iterarcs(state):\n"
-         "        arc = arciter.Value()\n") StdMutableArcIterator;
-%template(LogMutableArcIterator) MutableArcIterator<LogMutableFst>;
-
-/* Instantiate lazy composition FSTs. */
-%feature("docstring",
-         "Lazy composition of two FSTs.\n") StdComposeFst;
-%feature("notabstract") ComposeFst<StdArc>;
-%template(StdComposeFst) ComposeFst<StdArc>;
-%feature("docstring",
-         "Lazy composition of two FSTs.\n") LogComposeFst;
-%feature("notabstract") ComposeFst<LogArc>;
-%template(LogComposeFst) ComposeFst<LogArc>;
-
-%template(StdMatcher) Matcher<StdFst>;
-%template(LogMatcher) Matcher<LogFst>;
-
-%template(StdRhoMatcher) RhoMatcher<StdMatcher>;
-%template(LogRhoMatcher) RhoMatcher<LogMatcher>;
-%template(StdRhoComposeOptions) ComposeFstOptions<StdArc, StdRhoMatcher>;
-%template(LogRhoComposeOptions) ComposeFstOptions<StdArc, LogRhoMatcher>;
-
-%template(StdSigmaMatcher) SigmaMatcher<StdMatcher>;
-%template(LogSigmaMatcher) SigmaMatcher<LogMatcher>;
-%template(StdSigmaComposeOptions) ComposeFstOptions<StdArc, StdSigmaMatcher>;
-%template(LogSigmaComposeOptions) ComposeFstOptions<StdArc, LogSigmaMatcher>;
-
-%template(StdPhiMatcher) PhiMatcher<StdMatcher>;
-%template(LogPhiMatcher) PhiMatcher<LogMatcher>;
-%template(StdPhiComposeOptions) ComposeFstOptions<StdArc, StdPhiMatcher>;
-%template(LogPhiComposeOptions) ComposeFstOptions<StdArc, LogPhiMatcher>;
-
-/* Instantiate template functions. */
-%feature("docstring",
-         "Compose two FSTs placing the result in a newly initialized FST.") Compose;
-void Compose(StdFst const &fst1, StdFst const &fst2, StdMutableFst *result);
-void Compose(LogFst const &fst1, LogFst const &fst2, LogMutableFst *result);
-%feature("docstring",
-         "Connect an FST.") Connect;
-void Connect(StdMutableFst *fst);
-void Connect(LogMutableFst *fst);
-
-%feature("docstring",
-         "Determinize an FST, placing the result in a newly initialize FST.") Determinize;
-void Determinize(StdFst const &inp, StdMutableFst *out);
-void Determinize(LogFst const &inp, LogMutableFst *out);
-%feature("docstring",
-         "Take the difference between two FSTs, placing the result in a\n"
-         "newly initialized FST.") Difference;
-void Difference(StdFst const &fst, StdFst const &fst2, StdMutableFst *out);
-void Difference(LogFst const &fst, LogFst const &fst2, LogMutableFst *out);
-%feature("docstring",
-         "Intersect two FSTs, placing the result in a\n"
-         "newly initialized FST.") Intersect;
-void Intersect(StdFst const &fst,StdFst const &fst2,StdMutableFst *out);
-void Intersect(LogFst const &fst,LogFst const &fst2,LogMutableFst *out);
-%feature("docstring",
-         "Invert an FST.") Invert;
-void Invert(StdMutableFst *fst);
-void Invert(LogMutableFst *fst);
-%feature("docstring",
-         "Minimize an FST.") Minimize;
-void Minimize(StdMutableFst *fst);
-void Minimize(LogMutableFst *fst);
-%feature("docstring",
-         "Prune an FST, removing all arcs above threshold") Prune;
-void Prune(StdMutableFst *fst,float threshold);
-void Prune(LogMutableFst *fst,float threshold);
-%feature("docstring",
-         "??") RandEquivalent;
-bool RandEquivalent(StdFst const &fst,StdFst const &fst2,int n);
-bool RandEquivalent(LogFst const &fst,LogFst const &fst2,int n);
-%feature("docstring",
-         "??") RandGen;
-void RandGen(StdFst const &fst,StdMutableFst *out);
-void RandGen(LogFst const &fst,LogMutableFst *out);
-// Replace
-%feature("docstring",
-         "Reverse an FST, placing result in a newly initialized FST.") Reverse;
-void Reverse(StdFst const &fst,StdMutableFst *out);
-void Reverse(LogFst const &fst,LogMutableFst *out);
-// Reweight
-%feature("docstring",
-         "Remove epsilon transitions from an FST.") RmEpsilon;
-void RmEpsilon(StdMutableFst *out);
-void RmEpsilon(LogMutableFst *out);
-%feature("docstring",
-         "Find the (+) sum of all the paths from p to q.")
-ShortestDistance;
-
-namespace std {
-%template(vector_weight) vector<Weight>;
-%template(vector_logweight) vector<LogWeight>;
+template<class A> class EncodeMapper {
+public:
+    EncodeMapper(uint32 flags,EncodeType type);
 };
 
-const float kDelta =                   1.0F/1024.0F;
-void ShortestDistance(StdFst const &fst, std::vector<Weight> *distance,bool reverse=false, float delta=kDelta);
-void ShortestDistance(LogFst const &fst, std::vector<LogWeight> *distance,bool reverse=false, float delta=kDelta);
-%feature("docstring",
-         "Find N shortest paths in an FST placing results in a newly initialized FST.")
-ShortestPath;
-void ShortestPath(StdFst const &fst, StdMutableFst *out,int n);
-void ShortestPath(LogFst const &fst, LogMutableFst *out,int n);
-// Synchronize
-%feature("docstring",
-         "Topologically sort an FST.") TopSort;
-void TopSort(StdMutableFst *fst);
-void TopSort(LogMutableFst *fst);
-%feature("docstring",
-         "Take the union of two FSTs, placing the result in the first argument.") Union;
-void Union(StdMutableFst *out,StdFst const &fst);
-void Union(LogMutableFst *out,LogFst const &fst);
-%feature("docstring",
-         "Verify an FST.") Verify;
-bool Verify(StdFst const &fst);
-bool Verify(LogFst const &fst);
+/* More helper functions */
 
-/* A whole bunch of custom and convenience functions. */
-%feature("docstring",
-         "Convenience function to read a StdVectorFst from a file.") Read;
 %inline %{
-    StdVectorFst *Read(const char *s) {
-        return StdVectorFst::Read(s);
-    }
-
     template<class A>
     char *GetString(MutableFst<A> *fst,int which=0) {
         char result[100000];
@@ -399,65 +223,185 @@ bool Verify(LogFst const &fst);
     }
 %}
 
+namespace std {
+%template(vector_weight) vector<Weight>;
+%template(vector_logweight) vector<LogWeight>;
+};
+
+/*****************************************************************
+ * Macro for instantiating templates for all the different classes
+ * and functions.  Note that you must arrange for
+ *
+ * to be explicitly defined beforehand.
+ *****************************************************************/
+
+%define INSTANTIATE_FST(PREFIX,ARCTYPE,WEIGHTTYPE,DESC)
+
+/* Instantiate arc classes. */
+%feature("docstring",
+         "Standard arc class.") ARCTYPE;
+%template(ARCTYPE) ArcTpl<WEIGHTTYPE>;
+
+/* Instantiate Fst abstract base classes. */
+%template(PREFIX ## Fst) Fst<ARCTYPE>;
+%template(PREFIX ## MutableFst) MutableFst<ARCTYPE>;
+
+/* Instantiate VectorFst implementation classes. */
+%feature("docstring",
+         "Standard FST class, using floating-point weights in the log semiring\n"
+         "and an underlying implementation based on C++ vectors.") PREFIX ## VectorFst;
+%feature("notabstract") VectorFst<ARCTYPE>;
+%template(PREFIX ## VectorFst) VectorFst<ARCTYPE>;
+
+/* Instantiate state iterators. */
+%feature("docstring",
+         "Underlying iterator class over states.  Use Python iterator\n"
+         "syntax instead, e.g.:\n\n"
+         "for state in fst:\n"
+         "    ...\n") PREFIX ## StateIterator;
+%template(PREFIX ## StateIterator) StateIterator<PREFIX ## Fst>;
+
+/* Instantiate arc iterators. */
+%feature("docstring",
+         "Underlying iterator class over arcs.  Use Python iterator\n"
+         "syntax instead, e.g.:\n\n"
+         "for state in fst:\n"
+         "    for arc in fst.iterarcs(state):\n") ARCTYPE ## Iterator;
+%template(ARCTYPE ## Iterator) ArcIterator<PREFIX ## Fst>;
+%feature("docstring",
+         "Underlying iterator class over arcs which allows changes to be\n"
+         "made.  Use Python iterator\n"
+         "syntax instead, e.g.:\n\n"
+         "for state in fst:\n"
+         "    for arciter in fst.mutable_iterarcs(state):\n"
+         "        arc = arciter.Value()\n") PREFIX ## MutableArcIterator;
+%template(PREFIX ## MutableArcIterator) MutableArcIterator<PREFIX ## MutableFst>;
+
+/* Instantiate lazy composition FSTs. */
+%feature("docstring",
+         "Lazy composition of two FSTs.\n") PREFIX ## ComposeFst;
+%feature("notabstract") ComposeFst<ARCTYPE>;
+%template(PREFIX ## ComposeFst) ComposeFst<ARCTYPE>;
+%template(PREFIX ## Matcher) Matcher<PREFIX ## Fst>;
+%template(PREFIX ## RhoMatcher) RhoMatcher<PREFIX ## Matcher>;
+%template(PREFIX ## RhoComposeOptions) ComposeFstOptions<ARCTYPE, PREFIX ## RhoMatcher>; // ARCTYPE or StdArc??
+%template(PREFIX ## SigmaMatcher) SigmaMatcher<PREFIX ## Matcher>;
+%template(PREFIX ## SigmaComposeOptions) ComposeFstOptions<ARCTYPE, PREFIX ## SigmaMatcher>;
+%template(PREFIX ## PhiMatcher) PhiMatcher<PREFIX ## Matcher>;
+%template(PREFIX ## PhiComposeOptions) ComposeFstOptions<ARCTYPE, PREFIX ## PhiMatcher>;
+
+/* Instantiate template functions. */
+%feature("docstring",
+         "Compose two FSTs placing the result in a newly initialized FST.") Compose;
+void Compose(PREFIX ## Fst const &fst1, PREFIX ## Fst const &fst2, PREFIX ## MutableFst *result);
+%feature("docstring",
+         "Connect an FST.") Connect;
+void Connect(PREFIX ## MutableFst *fst);
+
+%feature("docstring",
+         "Determinize an FST, placing the result in a newly initialize FST.") Determinize;
+void Determinize(PREFIX ## Fst const &inp, PREFIX ## MutableFst *out);
+%feature("docstring",
+         "Take the difference between two FSTs, placing the result in a\n"
+         "newly initialized FST.") Difference;
+void Difference(PREFIX ## Fst const &fst, PREFIX ## Fst const &fst2, PREFIX ## MutableFst *out);
+%feature("docstring",
+         "Intersect two FSTs, placing the result in a\n"
+         "newly initialized FST.") Intersect;
+void Intersect(PREFIX ## Fst const &fst,PREFIX ## Fst const &fst2,PREFIX ## MutableFst *out);
+%feature("docstring",
+         "Invert an FST.") Invert;
+void Invert(PREFIX ## MutableFst *fst);
+%feature("docstring",
+         "Minimize an FST.") Minimize;
+void Minimize(PREFIX ## MutableFst *fst);
+%feature("docstring",
+         "Prune an FST, removing all arcs above threshold") Prune;
+void Prune(PREFIX ## MutableFst *fst,float threshold);
+%feature("docstring",
+         "??") RandEquivalent;
+bool RandEquivalent(PREFIX ## Fst const &fst,PREFIX ## Fst const &fst2,int n);
+%feature("docstring",
+         "??") RandGen;
+void RandGen(PREFIX ## Fst const &fst,PREFIX ## MutableFst *out);
+// Replace
+%feature("docstring",
+         "Reverse an FST, placing result in a newly initialized FST.") Reverse;
+void Reverse(PREFIX ## Fst const &fst,PREFIX ## MutableFst *out);
+// Reweight
+%feature("docstring",
+         "Remove epsilon transitions from an FST.") RmEpsilon;
+void RmEpsilon(PREFIX ## MutableFst *out);
+%feature("docstring",
+         "Find the (+) sum of all the paths from p to q.")
+ShortestDistance;
+
+const float kDelta =                   1.0F/1024.0F;
+void ShortestDistance(PREFIX ## Fst const &fst, std::vector<WEIGHTTYPE> *distance,bool reverse=false, float delta=kDelta);
+%feature("docstring",
+         "Find N shortest paths in an FST placing results in a newly initialized FST.")
+ShortestPath;
+void ShortestPath(PREFIX ## Fst const &fst, PREFIX ## MutableFst *out,int n);
+// Synchronize
+%feature("docstring",
+         "Topologically sort an FST.") TopSort;
+void TopSort(PREFIX ## MutableFst *fst);
+%feature("docstring",
+         "Take the union of two FSTs, placing the result in the first argument.") Union;
+void Union(PREFIX ## MutableFst *out,PREFIX ## Fst const &fst);
+%feature("docstring",
+         "Verify an FST.") Verify;
+bool Verify(PREFIX ## Fst const &fst);
+
+/******************************************************************/
+
 %feature("docstring",
          "Get string starting at given state.") GetString;
-char *GetString(StdMutableFst *fst,int which=0);
-char *GetString(LogMutableFst *fst,int which=0);
+char *GetString(PREFIX ## MutableFst *fst,int which=0);
 
 %feature("docstring",
          "Get wide character string starting at given state.") WGetString;
-wchar_t *WGetString(StdMutableFst *fst,int which=0);
-wchar_t *WGetString(StdMutableFst *fst,int which=0);
+wchar_t *WGetString(PREFIX ## MutableFst *fst,int which=0);
 
 %feature("docstring",
          "Sort the arcs of an FST on the output labels.") ArcSortOutput;
-void ArcSortOutput(StdMutableFst *fst);
-void ArcSortOutput(LogMutableFst *fst);
+void ArcSortOutput(PREFIX ## MutableFst *fst);
 
 %feature("docstring",
          "Sort the arcs of an FST on the input labels.") ArcSortInput;
-void ArcSortInput(StdMutableFst *fst);
-void ArcSortInput(LogMutableFst *fst);
+void ArcSortInput(PREFIX ## MutableFst *fst);
 
 %feature("docstring",
          "Project an FST to an FSA using the input labels.") ProjectInput;
-void ProjectInput(StdMutableFst *result);
-void ProjectInput(LogMutableFst *result);
+void ProjectInput(PREFIX ## MutableFst *result);
 
 %feature("docstring",
          "Project an FST to an FSA using the output labels.") ProjectOutput;
-void ProjectOutput(StdMutableFst *result);
-void ProjectOutput(LogMutableFst *result);
+void ProjectOutput(PREFIX ## MutableFst *result);
 
 %feature("docstring",
          "Perform Kleene star closure on an FST.") ClosureStar;
-void ClosureStar(StdMutableFst *fst);
-void ClosureStar(LogMutableFst *fst);
+void ClosureStar(PREFIX ## MutableFst *fst);
 
 %feature("docstring",
          "Perform plus-closure on an FST.") ClosurePlus;
-void ClosurePlus(StdMutableFst *fst);
-void ClosurePlus(LogMutableFst *fst);
+void ClosurePlus(PREFIX ## MutableFst *fst);
 
 %feature("docstring",
          "Concatenate fst2 onto fst.") ConcatOnto;
-void ConcatOnto(StdMutableFst *fst,StdFst const &fst2);
-void ConcatOnto(LogMutableFst *fst,LogFst const &fst2);
+void ConcatOnto(PREFIX ## MutableFst *fst,PREFIX ## Fst const &fst2);
 
 %feature("docstring",
          "Concatenate fst onto fst2.") ConcatOntoOther;
-void ConcatOntoOther(StdFst const &fst,StdMutableFst *fst2);
-void ConcatOntoOther(LogFst const &fst,LogMutableFst *fst2);
+void ConcatOntoOther(PREFIX ## Fst const &fst,PREFIX ## MutableFst *fst2);
 
 %feature("docstring",
          "Epsilon normalize an FST on the input side.") EpsNormInput;
-void EpsNormInput(StdFst const &fst, StdMutableFst *out);
-void EpsNormInput(LogFst const &fst, LogMutableFst *out);
+void EpsNormInput(PREFIX ## Fst const &fst, PREFIX ## MutableFst *out);
 
 %feature("docstring",
          "Epsilon normalize an FST on the output side.") EpsNormOutput;
-void EpsNormOutput(StdFst const &fst, StdMutableFst *out);
-void EpsNormOutput(LogFst const &fst, LogMutableFst *out);
+void EpsNormOutput(PREFIX ## Fst const &fst, PREFIX ## MutableFst *out);
 
 %feature("docstring",
          "Switch output and/or input symbol table and renumber arcs to match.\n\n"
@@ -470,49 +414,54 @@ void EpsNormOutput(LogFst const &fst, LogMutableFst *out);
          "@type input: bool\n"
          "@param output: Convert output symbols.\n"
          "@type output: bool\n") ConvertSymbols;
-void ConvertSymbols(StdVectorFst *fst, SymbolTable const &symtab,
-                   bool input, bool output);
-void ConvertSymbols(LogVectorFst *fst, SymbolTable const &symtab,
+void ConvertSymbols(PREFIX ## VectorFst *fst, SymbolTable const &symtab,
                    bool input, bool output);
 
 %newobject Copy;
 %feature("docstring", "Copy an FST.") Copy;
 %inline %{
-    StdVectorFst *Copy(StdVectorFst &fst) {
+    PREFIX ## VectorFst *Copy(PREFIX ## VectorFst &fst) {
         // is there a method that does this directly?
-        StdVectorFst *result = new StdVectorFst();
-        Union(result,fst);
-        return result;
-    }
-    LogVectorFst *Copy(LogVectorFst &fst) {
-        // is there a method that does this directly?
-        LogVectorFst *result = new LogVectorFst();
+        PREFIX ## VectorFst *result = new PREFIX ## VectorFst();
         Union(result,fst);
         return result;
     }
 %}
 
-/* Encoding and decoding. */
-
-enum EncodeType { ENCODE, DECODE };
-static const uint32 kEncodeLabels      = 0x00001;
-static const uint32 kEncodeWeights     = 0x00002;
-static const uint32 kEncodeFlags       = 0x00003;  // All non-internal flags
-
-template<class A> class EncodeMapper {
-public:
-    EncodeMapper(uint32 flags,EncodeType type);
-};
 %inline %{
-typedef EncodeMapper<StdArc> StdEncodeMapper;
+typedef EncodeMapper<ARCTYPE> PREFIX ## EncodeMapper;
 %}
 
-%template(StdEncodeMapper) EncodeMapper<StdArc>;
+%template(PREFIX ## EncodeMapper) EncodeMapper<ARCTYPE>;
 
 %feature("docstring",
          "Encode the arcs of an FST.") Encode;
-void Encode(StdMutableFst *fst,StdEncodeMapper *mapper);
+void Encode(PREFIX ## MutableFst *fst,PREFIX ## EncodeMapper *mapper);
 %feature("docstring",
          "Decode the arcs of an FST.") Decode;
-void Decode(StdMutableFst *fst,const EncodeMapper<StdArc> &mapper);
+void Decode(PREFIX ## MutableFst *fst,const EncodeMapper<ARCTYPE> &mapper);
+
+%enddef
+
+INSTANTIATE_FST(Std,StdArc,Weight,"min/+ semiring");
+INSTANTIATE_FST(Log,LogArc,LogWeight,"log semiring");
+INSTANTIATE_FST(Log64,Log64Arc,Log64Weight,"log semiring (64bit)");
+
+/* More convenience functions. */
+
+%feature("docstring",
+         "Convenience function to read a StdVectorFst from a file.") Read;
+%inline %{
+    StdVectorFst *Read(const char *s) {
+        return StdVectorFst::Read(s);
+    }
+%}
+
+%feature("docstring",
+         "Convenience function to read a StdVectorFst from a file.") Read;
+%inline %{
+    LogVectorFst *ReadLogVectorFst(const char *s) {
+        return LogVectorFst::Read(s);
+    }
+%}
 
