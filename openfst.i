@@ -248,8 +248,8 @@ void Union(StdMutableFst *out,StdFst const &fst);
 void Union(LogMutableFst *out,LogFst const &fst);
 %feature("docstring",
          "Verify an FST.") Verify;
-void Verify(StdFst const &fst);
-void Verify(LogFst const &fst);
+bool Verify(StdFst const &fst);
+bool Verify(LogFst const &fst);
 
 /* A whole bunch of custom and convenience functions. */
 %feature("docstring",
