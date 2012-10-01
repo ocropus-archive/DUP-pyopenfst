@@ -469,3 +469,9 @@ INSTANTIATE_FST(Log64,Log64Arc,Log64Weight,"log semiring (64bit)");
     }
 %}
 
+/* ADD:
+ *
+ * Rho = -3
+ * Sigma = -2
+ * Phi = -1
+ */
