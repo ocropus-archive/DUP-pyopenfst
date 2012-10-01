@@ -223,6 +223,8 @@ public:
     }
 %}
 
+/* standard vector types made of weights */
+
 namespace std {
 %template(vector_weight) vector<Weight>;
 %template(vector_logweight) vector<LogWeight>;
@@ -283,11 +285,13 @@ namespace std {
 %feature("notabstract") ComposeFst<ARCTYPE>;
 %template(PREFIX ## ComposeFst) ComposeFst<ARCTYPE>;
 %template(PREFIX ## Matcher) Matcher<PREFIX ## Fst>;
+
 %template(PREFIX ## RhoMatcher) RhoMatcher<PREFIX ## Matcher>;
-%template(PREFIX ## RhoComposeOptions) ComposeFstOptions<ARCTYPE, PREFIX ## RhoMatcher>; // ARCTYPE or StdArc??
 %template(PREFIX ## SigmaMatcher) SigmaMatcher<PREFIX ## Matcher>;
-%template(PREFIX ## SigmaComposeOptions) ComposeFstOptions<ARCTYPE, PREFIX ## SigmaMatcher>;
 %template(PREFIX ## PhiMatcher) PhiMatcher<PREFIX ## Matcher>;
+
+%template(PREFIX ## RhoComposeOptions) ComposeFstOptions<ARCTYPE, PREFIX ## RhoMatcher>; // ARCTYPE or StdArc??
+%template(PREFIX ## SigmaComposeOptions) ComposeFstOptions<ARCTYPE, PREFIX ## SigmaMatcher>;
 %template(PREFIX ## PhiComposeOptions) ComposeFstOptions<ARCTYPE, PREFIX ## PhiMatcher>;
 
 /* Instantiate template functions. */
